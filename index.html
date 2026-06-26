@@ -1251,28 +1251,41 @@ function renderPlaceMap(place){
 }
 
 function openNaverDirections(){
-  if(currentDestination && currentDestination.lat && currentDestination.lng){
-    const lng = currentDestination.lng;
-    const lat = currentDestination.lat;
-    const name = encodeURIComponent(currentDestination.name || '도착지');
-    window.open('https://map.naver.com/p/directions/-/' + lng + ',' + lat + ',' + name + ',PLACE_POI/-/car', '_blank');
+  const destination = currentDestination || {};
+  const name = destination.name || '도착지';
+  const address = destination.address || '';
+
+  if(destination.lat && destination.lng){
+    const encodedName = encodeURIComponent(name);
+    const lng = destination.lng;
+    const lat = destination.lat;
+
+    window.open(
+      'https://map.naver.com/p/directions/-/' +
+      lng + ',' + lat + ',' + encodedName + ',PLACE_POI/-/car',
+      '_blank'
+    );
     return;
   }
 
-  const keyword = currentDestination
-    ? ((currentDestination.name || '') + ' ' + (currentDestination.address || '')).trim()
-    : '';
-  window.open('https://map.naver.com/p/search/' + encodeURIComponent(keyword || '도착지'), '_blank');
+  const keyword = [name, address].filter(Boolean).join(' ');
+
+  window.open(
+    'https://map.naver.com/p/search/' + encodeURIComponent(keyword || '도착지'),
+    '_blank'
+  );
 }
 
 function renderPlaceMap(place){
   const mapEl = document.getElementById('placeMap');
   if(!mapEl) return;
 
-  currentDestination = {
-    name: place.name || '도착지',
-    address: place.address || ''
-  };
+ currentDestination = {
+  name: place.name || '도착지',
+  address: place.address || '',
+  lat: null,
+  lng: null
+};
 
   if(!place.address){
     mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 정보가 없습니다</span>';
