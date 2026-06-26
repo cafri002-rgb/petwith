@@ -437,8 +437,12 @@ nav{
 .review-text{font-size:13px;color:var(--text-muted);line-height:1.65;}
 .map-placeholder{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
-  height:110px;display:flex;align-items:center;justify-content:center;
-  margin-top:8px;gap:6px;flex-direction:column;color:var(--text-muted);
+  height:200px;position:relative;
+  margin-top:8px;color:var(--text-muted);
+}
+.map-placeholder-msg{
+  position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  flex-direction:column;gap:6px;font-size:12px;font-weight:600;pointer-events:none;
 }
 .cta-row{margin-top:1.5rem;display:flex;gap:8px;}
 .cta-btn{
@@ -1229,19 +1233,19 @@ function renderPlaceMap(place){
   };
 
   if(!place.address){
-    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 정보가 없습니다</span>';
+    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 정보가 없습니다</span></div>';
     return;
   }
 
   if(!window.kakao || !kakao.maps || !kakao.maps.services){
-    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">카카오 지도 키를 설정해주세요</span>';
+    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>카카오 지도 키를 설정해주세요</span></div>';
     return;
   }
 
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.addressSearch(place.address, function(result, status){
     if(status !== kakao.maps.services.Status.OK || !result.length){
-      mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 위치를 찾지 못했습니다</span>';
+      mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 위치를 찾지 못했습니다</span></div>';
       return;
     }
 
@@ -1267,7 +1271,13 @@ function renderPlaceMap(place){
       position: coords
     });
 
-    setTimeout(() => kakao.maps.event.trigger(map, 'resize'), 80);
+    // rAF 2중으로 감싸 Safari에서도 레이아웃 확정 후 resize 트리거
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        kakao.maps.event.trigger(map, 'resize');
+        map.setCenter(coords);
+      });
+    });
   });
 }
 
@@ -1337,15 +1347,15 @@ async function renderPlaceMap(place){
   if(!mapEl) return;
   const mapSearchAddress = getDirectionsAddress(place.address || '');
 
- currentDestination = {
-  name: place.name || '도착지',
-  address: place.address || '',
-  lat: null,
-  lng: null
-};
+  currentDestination = {
+    name: place.name || '도착지',
+    address: place.address || '',
+    lat: null,
+    lng: null
+  };
 
   if(!mapSearchAddress){
-    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 정보가 없습니다</span>';
+    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 정보가 없습니다</span></div>';
     return;
   }
 
@@ -1353,14 +1363,14 @@ async function renderPlaceMap(place){
     await waitForKakaoMaps();
   } catch(error) {
     console.error('카카오 지도를 불러오지 못했습니다:', error);
-    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">카카오 지도 키/도메인 또는 네트워크를 확인해주세요</span>';
+    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>카카오 지도 키/도메인 또는 네트워크를 확인해주세요</span></div>';
     return;
   }
 
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.addressSearch(mapSearchAddress, function(result, status){
     if(status !== kakao.maps.services.Status.OK || !result.length){
-      mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 위치를 찾지 못했습니다</span>';
+      mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 위치를 찾지 못했습니다</span></div>';
       return;
     }
 
@@ -1378,7 +1388,13 @@ async function renderPlaceMap(place){
     mapEl.innerHTML = '';
     const map = new kakao.maps.Map(mapEl, { center: coords, level: 3 });
     new kakao.maps.Marker({ map, position: coords });
-    setTimeout(() => kakao.maps.event.trigger(map, 'resize'), 80);
+    // rAF 2중으로 감싸 Safari에서도 레이아웃 확정 후 resize 트리거
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        kakao.maps.event.trigger(map, 'resize');
+        map.setCenter(coords);
+      });
+    });
   });
 }
 
@@ -1422,7 +1438,7 @@ function openModal(id){
       <div class="modal-section">
         <h4>위치</h4>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px">${escapeHtml(p.address || '주소 확인 필요')}</p>
-        <div class="map-placeholder" id="placeMap"><span style="font-size:12px;font-weight:600">지도를 불러오는 중입니다...</span></div>
+        <div class="map-placeholder" id="placeMap"><div class="map-placeholder-msg"><span>지도를 불러오는 중입니다...</span></div></div>
       </div>
       <div class="modal-section">
         <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
