@@ -1252,26 +1252,23 @@ function renderPlaceMap(place){
 
 function openNaverDirections(){
   const destination = currentDestination || {};
-  const name = destination.name || '도착지';
   const address = destination.address || '';
 
   if(destination.lat && destination.lng){
-    const encodedName = encodeURIComponent(name);
+    const encodedAddress = encodeURIComponent(address || '도착지');
     const lng = destination.lng;
     const lat = destination.lat;
 
     window.open(
       'https://map.naver.com/p/directions/-/' +
-      lng + ',' + lat + ',' + encodedName + ',PLACE_POI/-/car',
+      lng + ',' + lat + ',' + encodedAddress + ',PLACE_POI/-/car',
       '_blank'
     );
     return;
   }
 
-  const keyword = [name, address].filter(Boolean).join(' ');
-
   window.open(
-    'https://map.naver.com/p/search/' + encodeURIComponent(keyword || '도착지'),
+    'https://map.naver.com/p/search/' + encodeURIComponent(address || '도착지'),
     '_blank'
   );
 }
