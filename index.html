@@ -438,10 +438,14 @@ nav{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
   height:200px;position:relative;
   margin-top:8px;color:var(--text-muted);
+  overflow:hidden;
 }
 .map-placeholder-msg{
   position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
   flex-direction:column;gap:6px;font-size:12px;font-weight:600;pointer-events:none;
+}
+.map-embed{
+  width:100%;height:100%;border:0;display:block;background:var(--surface);
 }
 .cta-row{margin-top:1.5rem;display:flex;gap:8px;}
 .cta-btn{
@@ -766,8 +770,6 @@ let curRegion="전체",curType="all",curTag="",searchQ="";
 let favs=new Set();
 let uploadedImageDataUrl = '';
 let currentDestination = null;
-const KAKAO_MAP_APP_KEY = '7bbdeb625d2d252fbc7c11ca693aa8be';
-let kakaoMapsReadyPromise = null;
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
@@ -1271,84 +1273,7 @@ function openNaverDirections(){
   );
 }
 
-function waitForKakaoMaps(){
-  if(location.protocol === 'file:'){
-    return Promise.reject(new Error('LOCAL_FILE'));
-  }
-
-  if(kakaoMapsReadyPromise) return kakaoMapsReadyPromise;
-
-  kakaoMapsReadyPromise = new Promise((resolve, reject) => {
-    let settled = false;
-    const fail = (error) => {
-      if(settled) return;
-      settled = true;
-      clearTimeout(timer);
-      kakaoMapsReadyPromise = null;
-      reject(error);
-    };
-    const finish = () => {
-      if(settled) return;
-      settled = true;
-      clearTimeout(timer);
-
-      if(!window.kakao || !kakao.maps || !kakao.maps.load){
-        kakaoMapsReadyPromise = null;
-        reject(new Error('Kakao Maps SDK is not available'));
-        return;
-      }
-
-      kakao.maps.load(() => {
-        if(kakao.maps.services) resolve();
-        else {
-          kakaoMapsReadyPromise = null;
-          reject(new Error('Kakao Maps services library is not available'));
-        }
-      });
-    };
-
-    const timer = setTimeout(() => {
-      fail(new Error('KAKAO_MAPS_TIMEOUT'));
-    }, 9000);
-
-    if(window.kakao && kakao.maps && kakao.maps.load){
-      finish();
-      return;
-    }
-
-    let script = document.getElementById('kakaoMapsSdk');
-    if(!script){
-      script = document.createElement('script');
-      script.id = 'kakaoMapsSdk';
-      script.async = true;
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_MAP_APP_KEY)}&libraries=services&autoload=false`;
-      script.addEventListener('load', finish, { once: true });
-      script.addEventListener('error', () => fail(new Error('KAKAO_MAPS_SCRIPT_ERROR')), { once: true });
-      document.head.appendChild(script);
-      return;
-    }
-
-    script.addEventListener('load', finish, { once: true });
-    script.addEventListener('error', () => fail(new Error('KAKAO_MAPS_SCRIPT_ERROR')), { once: true });
-  });
-
-  return kakaoMapsReadyPromise;
-}
-
-function getKakaoMapErrorMessage(error){
-  if(error && error.message === 'LOCAL_FILE'){
-    return '카카오 지도는 파일을 직접 열면 표시되지 않습니다. GitHub Pages 주소에서 확인해주세요.';
-  }
-  if(error && error.message === 'KAKAO_MAPS_TIMEOUT'){
-    return '카카오 지도 로딩이 지연됩니다. 도메인 등록과 네트워크를 확인해주세요.';
-  }
-  if(error && error.message === 'KAKAO_MAPS_SCRIPT_ERROR'){
-    return '카카오 지도 스크립트를 불러오지 못했습니다. 네트워크 차단 여부를 확인해주세요.';
-  }
-  return '카카오 지도 키/도메인 또는 네트워크를 확인해주세요.';
-}
-
-async function renderPlaceMap(place){
+function renderPlaceMap(place){
   const mapEl = document.getElementById('placeMap');
   if(!mapEl) return;
   const mapSearchAddress = getDirectionsAddress(place.address || '');
@@ -1365,44 +1290,16 @@ async function renderPlaceMap(place){
     return;
   }
 
-  try {
-    await waitForKakaoMaps();
-  } catch(error) {
-    console.error('카카오 지도를 불러오지 못했습니다:', error);
-    mapEl.innerHTML = `<div class="map-placeholder-msg"><span>${getKakaoMapErrorMessage(error)}</span></div>`;
-    return;
-  }
-
-  const geocoder = new kakao.maps.services.Geocoder();
-  geocoder.addressSearch(mapSearchAddress, function(result, status){
-    if(status !== kakao.maps.services.Status.OK || !result.length){
-      console.error('카카오 주소 검색 실패:', status, mapSearchAddress);
-      mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 위치를 찾지 못했습니다</span></div>';
-      return;
-    }
-
-    const lat = Number(result[0].y);
-    const lng = Number(result[0].x);
-    const coords = new kakao.maps.LatLng(lat, lng);
-
-    currentDestination = {
-      name: place.name || '도착지',
-      address: place.address || '',
-      lat,
-      lng
-    };
-
-    mapEl.innerHTML = '';
-    const map = new kakao.maps.Map(mapEl, { center: coords, level: 3 });
-    new kakao.maps.Marker({ map, position: coords });
-    // rAF 2중으로 감싸 Safari에서도 레이아웃 확정 후 resize 트리거
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        kakao.maps.event.trigger(map, 'resize');
-        map.setCenter(coords);
-      });
-    });
-  });
+  const query = encodeURIComponent(mapSearchAddress);
+  mapEl.innerHTML = `
+    <iframe
+      class="map-embed"
+      title="${escapeHtml(place.name || '장소')} 지도"
+      loading="lazy"
+      referrerpolicy="no-referrer-when-downgrade"
+      src="https://maps.google.com/maps?q=${query}&z=16&output=embed">
+    </iframe>
+  `;
 }
 
 
