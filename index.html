@@ -1131,13 +1131,29 @@ function renderHot(){
   `).join('');
 }
 
+function toArray(value){
+  if(Array.isArray(value)) return value;
+  if(!value) return [];
+
+  if(typeof value === 'string'){
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e) {
+      return [];
+    }
+  }
+
+  return [];
+}
+
 function openModal(id){
   const p=PLACES.find(x=>x.id===id);if(!p)return;
   const tl=typeLabel(p.type);
   const tags=p.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
-  const menus=(p.menus || []).slice(0,5).map(m=>`
-    <div class="modal-menu-item"><strong>${escapeHtml(m.name)}</strong><span>${formatPrice(m.price)}</span></div>
-  `).join('');
+  const menus = toArray(p.menus).slice(0,5).map(m=>`
+  <div class="modal-menu-item"><strong>${escapeHtml(m.name || '')}</strong><span>${formatPrice(m.price || '')}</span></div>
+`).join('');
   const reviews=p.reviews.map(r=>`
     <div class="review-item">
       <div class="review-top">
