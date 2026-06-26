@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7bbdeb625d2d252fbc7c11ca693aa8be&libraries=services"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -761,6 +762,7 @@ const TYPES=[
 let curRegion="전체",curType="all",curTag="",searchQ="";
 let favs=new Set();
 let uploadedImageDataUrl = '';
+let currentDestination = null;
 
 const TAG_OPTIONS = ['야외테라스','실내가능','물·간식제공','대형견가능','소형견전용','마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','물 제공','간식 제공'];
@@ -1196,6 +1198,73 @@ function renderHot(){
   `).join('');
 }
 
+function renderPlaceMap(place){
+  const mapEl = document.getElementById('placeMap');
+  if(!mapEl) return;
+
+  currentDestination = {
+    name: place.name || '도착지',
+    address: place.address || ''
+  };
+
+  if(!place.address){
+    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 정보가 없습니다</span>';
+    return;
+  }
+
+  if(!window.kakao || !kakao.maps || !kakao.maps.services){
+    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">카카오 지도 키를 설정해주세요</span>';
+    return;
+  }
+
+  const geocoder = new kakao.maps.services.Geocoder();
+  geocoder.addressSearch(place.address, function(result, status){
+    if(status !== kakao.maps.services.Status.OK || !result.length){
+      mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 위치를 찾지 못했습니다</span>';
+      return;
+    }
+
+    const lat = Number(result[0].y);
+    const lng = Number(result[0].x);
+    const coords = new kakao.maps.LatLng(lat, lng);
+
+    currentDestination = {
+      name: place.name || '도착지',
+      address: place.address || '',
+      lat,
+      lng
+    };
+
+    mapEl.innerHTML = '';
+    const map = new kakao.maps.Map(mapEl, {
+      center: coords,
+      level: 3
+    });
+
+    new kakao.maps.Marker({
+      map,
+      position: coords
+    });
+
+    setTimeout(() => kakao.maps.event.trigger(map, 'resize'), 80);
+  });
+}
+
+function openNaverDirections(){
+  if(currentDestination && currentDestination.lat && currentDestination.lng){
+    const lng = currentDestination.lng;
+    const lat = currentDestination.lat;
+    const name = encodeURIComponent(currentDestination.name || '도착지');
+    window.open('https://map.naver.com/p/directions/-/' + lng + ',' + lat + ',' + name + ',PLACE_POI/-/car', '_blank');
+    return;
+  }
+
+  const keyword = currentDestination
+    ? ((currentDestination.name || '') + ' ' + (currentDestination.address || '')).trim()
+    : '';
+  window.open('https://map.naver.com/p/search/' + encodeURIComponent(keyword || '도착지'), '_blank');
+}
+
 function openModal(id){
   const p=PLACES.find(x=>x.id===id);if(!p)return;
   const tl=typeLabel(p.type);
@@ -1234,7 +1303,7 @@ function openModal(id){
       <div class="modal-section">
         <h4>위치</h4>
         <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px">${escapeHtml(p.address || '주소 확인 필요')}</p>
-        <div class="map-placeholder"><span style="font-size:28px">🗺️</span><span style="font-size:12px;font-weight:600">지도 보기</span></div>
+        <div class="map-placeholder" id="placeMap"><span style="font-size:12px;font-weight:600">지도를 불러오는 중입니다...</span></div>
       </div>
       <div class="modal-section">
         <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
@@ -1242,7 +1311,7 @@ function openModal(id){
       </div>
       <div class="cta-row">
         <button class="cta-btn cta-secondary" onclick="closeModalDirect()">닫기</button>
-        <button class="cta-btn cta-primary">길찾기 →</button>
+        <button class="cta-btn cta-primary" onclick="openNaverDirections()">길찾기 →</button>
       </div>
     </div>
   `;
