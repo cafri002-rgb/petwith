@@ -767,10 +767,63 @@ function formatPrice(value){
   const n = Number(String(value).replace(/[^0-9]/g,''));
   return n ? n.toLocaleString('ko-KR') + '원' : escapeHtml(value);
 }
+function parseCsvRows(text){
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+
+  for(let i = 0; i < text.length; i++){
+    const ch = text[i], next = text[i + 1];
+
+    if(ch === '"'){
+      if(inQuotes && next === '"'){
+        field += '"';
+        i++;
+      }else{
+        inQuotes = !inQuotes;
+      }
+    }else if(ch === ',' && !inQuotes){
+      row.push(field);
+      field = '';
+    }else if((ch === '\n' || ch === '\r') && !inQuotes){
+      if(ch === '\r' && next === '\n') i++;
+      row.push(field);
+      if(row.some(v => String(v).trim() !== '')) rows.push(row);
+      row = [];
+      field = '';
+    }else{
+      field += ch;
+    }
+  }
+
+  row.push(field);
+  if(row.some(v => String(v).trim() !== '')) rows.push(row);
+  return rows;
+}
+
+function toArray(value){
+  if(Array.isArray(value)) return value;
+  if(!value) return [];
+
+  if(typeof value === 'string'){
+    const trimmed = value.trim();
+    if(!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch(e) {
+      return trimmed.split(',').map(t => t.trim()).filter(Boolean);
+    }
+  }
+
+  return [];
+}
+
 function getPrimaryPrice(p){
-  if (p.menus && p.menus.length && p.menus[0].price) return formatPrice(p.menus[0].price);
+  const menus = toArray(p.menus);
+  if (menus.length && menus[0].price) return formatPrice(menus[0].price);
   return p.priceRange || '';
 }
+
 function getPlaceImage(p){
   if (p.imageUrl) return `<img class="place-photo" src="${p.imageUrl}" alt="${escapeHtml(p.name)} 이미지">`;
   return `<span class="card-img-emoji">${p.emoji || '🐾'}</span>`;
@@ -971,29 +1024,27 @@ async function fetchSheetsData() {
     const response = await fetch(SHEET_URL);
     const csvText = await response.text();
     
-    const lines = csvText.split('\n').map(line => {
-      return line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
-    });
-    
-    if (lines.length < 2) return;
-    
-    const headers = lines[0].map(h => h.replace(/"/g, '').trim());
-    
-    PLACES = lines.slice(1).map(line => {
+    const lines = parseCsvRows(csvText);
+
+if (lines.length < 2) return;
+
+const headers = lines[0].map(h => String(h).trim());
+
+PLACES = lines.slice(1).map(line => {
       if (line.length === 0) return null;
       let obj = {};
       headers.forEach((header, index) => {
-        let value = line[index] ? line[index].replace(/"/g, '').trim() : '';
+        let value = line[index] ? String(line[index]).trim() : '';
         
         if (header === 'id' || header === 'reviewCount') {
-          obj[header] = parseInt(value) || 0;
-        } else if (header === 'rating') {
-          obj[header] = parseFloat(value) || 0.0;
-        } else if (header === 'tags') {
-          obj[header] = value ? value.split(',').map(t => t.trim()) : [];
-        } else {
-          obj[header] = value;
-        }
+  obj[header] = parseInt(value) || 0;
+} else if (header === 'rating') {
+  obj[header] = parseFloat(value) || 0.0;
+} else if (header === 'tags' || header === 'menus' || header === 'reviews') {
+  obj[header] = toArray(value);
+} else {
+  obj[header] = value;
+}
       });
       
       obj['reviews'] = obj['reviews'] ? JSON.parse(obj['reviews']) : [
@@ -1106,7 +1157,7 @@ function renderCards(){
       </div>
       <div class="card-body">
         <div class="card-name">${escapeHtml(p.name)}</div>
-        <div class="card-loc">📍 ${escapeHtml(p.address.split(' ').slice(0,3).join(' '))}</div>
+        <div class="card-loc">📍 ${escapeHtml(p.address || '주소 확인 필요')}</div>
         <div class="card-hours">🕒 ${escapeHtml(p.hours || '운영시간 확인 필요')}</div>
         <div class="card-tags">${tags}</div>
         <div class="card-meta">
@@ -1151,7 +1202,7 @@ function openModal(id){
   const p=PLACES.find(x=>x.id===id);if(!p)return;
   const tl=typeLabel(p.type);
   const tags=p.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
-  const menus = toArray(p.menus).slice(0,5).map(m=>`
+  const menus = toArray(p.menus).map(m=>`
   <div class="modal-menu-item"><strong>${escapeHtml(m.name || '')}</strong><span>${formatPrice(m.price || '')}</span></div>
 `).join('');
   const reviews=toArray(p.reviews).map(r=>`
@@ -1176,7 +1227,7 @@ function openModal(id){
       <div class="modal-info-grid">
         <div class="info-chip"><div class="label">운영시간</div><div class="val">${p.hours}</div></div>
         <div class="info-chip"><div class="label">대표 가격</div><div class="val">${getPrimaryPrice(p)}</div></div>
-        <div class="info-chip" style="grid-column:1/-1"><div class="label">🐶 반려견 정책</div><div class="val">${p.dogPolicy}</div></div>
+        <div class="info-chip" style="grid-column:1/-1"><div class="label">🐶 반려견 정책</div><div class="val">${escapeHtml(p.dogPolicy || '정책 확인 필요')}</div></div>
       </div>
       ${menus ? `<div class="modal-section">
         <h4>대표 메뉴</h4>
@@ -1184,7 +1235,7 @@ function openModal(id){
       </div>` : ''}
       <div class="modal-section">
         <h4>위치</h4>
-        <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px">${p.address}</p>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px">${escapeHtml(p.address || '주소 확인 필요')}</p>
         <div class="map-placeholder"><span style="font-size:28px">🗺️</span><span style="font-size:12px;font-weight:600">지도 보기</span></div>
       </div>
       <div class="modal-section">
