@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7bbdeb625d2d252fbc7c11ca693aa8be&libraries=services"></script>
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7bbdeb625d2d252fbc7c11ca693aa8be&libraries=services&autoload=false"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -1318,7 +1318,21 @@ function openNaverDirections(){
   );
 }
 
-function renderPlaceMap(place){
+function waitForKakaoMaps(){
+  return new Promise((resolve, reject) => {
+    if(!window.kakao || !kakao.maps || !kakao.maps.load){
+      reject(new Error('Kakao Maps SDK is not available'));
+      return;
+    }
+
+    kakao.maps.load(() => {
+      if(kakao.maps.services) resolve();
+      else reject(new Error('Kakao Maps services library is not available'));
+    });
+  });
+}
+
+async function renderPlaceMap(place){
   const mapEl = document.getElementById('placeMap');
   if(!mapEl) return;
   const mapSearchAddress = getDirectionsAddress(place.address || '');
@@ -1335,8 +1349,11 @@ function renderPlaceMap(place){
     return;
   }
 
-  if(!window.kakao || !kakao.maps || !kakao.maps.services){
-    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">카카오 지도 키/도메인을 확인해주세요</span>';
+  try {
+    await waitForKakaoMaps();
+  } catch(error) {
+    console.error('카카오 지도를 불러오지 못했습니다:', error);
+    mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">카카오 지도 키/도메인 또는 네트워크를 확인해주세요</span>';
     return;
   }
 
