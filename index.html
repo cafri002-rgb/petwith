@@ -583,7 +583,7 @@ nav{
 <div class="search-section">
   <div class="search-wrap">
     <span style="font-size:17px;flex-shrink:0">🔍</span>
-    <input type="text" id="searchInput" placeholder="지역, 업체명, 업종으로 검색해 보세요">
+    <input type="text" id="searchInput" placeholder="지역, 업체명, 업종 입력">
     <button class="search-btn" onclick="doSearch()">검색</button>
   </div>
 </div>
@@ -683,12 +683,12 @@ nav{
           </div>
 
           <div class="form-group full">
-            <label class="form-label">tags 선택</label>
+            <label class="form-label">편의 선택</label>
             <div class="check-grid" id="tagChecks"></div>
           </div>
 
           <div class="form-group full">
-            <label class="form-label">dogPolicy 선택</label>
+            <label class="form-label">정책 선택</label>
             <div class="check-grid" id="dogPolicyChecks"></div>
           </div>
 
@@ -764,8 +764,8 @@ let favs=new Set();
 let uploadedImageDataUrl = '';
 let currentDestination = null;
 
-const TAG_OPTIONS = ['야외테라스','실내가능','물·간식제공','대형견가능','소형견전용','마당있음','전용주차'];
-const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','물 제공','간식 제공'];
+const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
+const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
 const TIME_OPTIONS = Array.from({length:48}, (_,i) => {
   const h = String(Math.floor(i / 2)).padStart(2, '0');
   const m = i % 2 === 0 ? '00' : '30';
