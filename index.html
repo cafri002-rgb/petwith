@@ -1375,7 +1375,8 @@ function openModal(id){
     </div>
   `;
   document.getElementById('modalOverlay').classList.add('open');
-  document.body.style.overflow='hidden';
+document.body.style.overflow='hidden';
+setTimeout(() => renderPlaceMap(p), 120);
 }
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
