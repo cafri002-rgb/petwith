@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>펫위드 - 반려견 동반 맛집 & 카페</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#FFFFFF;
+  --surface:#F9FAFB;
+  --surface2:#F3F4F6;
+  --accent:#FFD60A;
+  --accent-dark:#E6B800;
+  --accent-hover:#FFC700;
+  --green:#1DB954;
+  --green-light:#E6F9ED;
+  --green-dark:#148A3D;
+  --text:#111827;
+  --text-muted:#6B7280;
+  --text-light:#9CA3AF;
+  --border:#E5E7EB;
+  --border-dark:#D1D5DB;
+  --white:#FFFFFF;
+  --tag-rest-bg:#FFF3E0;
+  --tag-rest:#D84315;
+  --tag-cafe-bg:#E3F2FD;
+  --tag-cafe:#1565C0;
+  --tag-both-bg:#E8F5E9;
+  --tag-both:#2E7D32;
+  --radius:16px;
+  --radius-sm:10px;
+  --radius-pill:100px;
+}
+body{font-family:'Inter','Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+nav{
+  position:sticky;top:0;z-index:100;
+  background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--border);
+  padding:0 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;
+  height:60px;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.logo-icon{
+  width:34px;height:34px;
+  background:var(--accent);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;
+  font-weight:900;
+}
+.logo-text{font-size:18px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.logo-text span{color:#6B7280;font-weight:500;font-size:13px;margin-left:2px;}
+.nav-links{display:flex;align-items:center;gap:6px;}
+.nav-link{
+  padding:7px 14px;border-radius:var(--radius-pill);
+  font-size:14px;font-weight:500;color:var(--text-muted);
+  background:none;border:none;cursor:pointer;font-family:inherit;
+  transition:background 0.15s,color 0.15s;text-decoration:none;
+}
+.nav-link:hover{background:var(--surface2);color:var(--text);}
+.nav-cta{
+  background:var(--text);color:#fff;
+  padding:8px 18px;border-radius:var(--radius-pill);
+  font-size:14px;font-weight:600;border:none;cursor:pointer;
+  font-family:inherit;transition:opacity 0.15s;
+}
+.nav-cta:hover{opacity:0.85;}
+
+/* HERO */
+.hero{
+  background:#fff;
+  padding:4rem 1.5rem 3.5rem;
+  text-align:center;
+  border-bottom:1px solid var(--border);
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';
+  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
+  width:600px;height:300px;
+  background:radial-gradient(ellipse,rgba(255,214,10,0.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+.hero-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--accent);
+  color:var(--text);
+  font-size:12px;font-weight:700;letter-spacing:0.3px;
+  padding:6px 14px;border-radius:var(--radius-pill);
+  margin-bottom:1.5rem;
+}
+.hero h1{
+  font-size:clamp(32px,6vw,52px);
+  font-weight:900;
+  color:var(--text);
+  line-height:1.15;
+  letter-spacing:-1.5px;
+  margin-bottom:1rem;
+  max-width:640px;margin-left:auto;margin-right:auto;
+}
+.hero h1 .underline{
+  display:inline-block;
+  position:relative;
+}
+.hero h1 .underline::after{
+  content:'';
+  position:absolute;bottom:-4px;left:0;right:0;height:6px;
+  background:var(--accent);border-radius:3px;z-index:-1;
+}
+.hero-sub{
+  font-size:16px;color:var(--text-muted);line-height:1.7;
+  max-width:480px;margin:0 auto 2rem;font-weight:400;
+}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;}
+.btn-hero-primary{
+  background:var(--text);color:#fff;
+  padding:14px 28px;border-radius:var(--radius-pill);
+  font-size:15px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;transition:opacity 0.15s;
+}
+.btn-hero-primary:hover{opacity:0.85;}
+.btn-hero-secondary{
+  background:var(--accent);color:var(--text);
+  padding:14px 28px;border-radius:var(--radius-pill);
+  font-size:15px;font-weight:700;border:none;cursor:pointer;
+  font-family:inherit;transition:background 0.15s;
+}
+.btn-hero-secondary:hover{background:var(--accent-hover);}
+.hero-stats{
+  display:flex;align-items:center;justify-content:center;
+  gap:2rem;margin-top:2.5rem;
+  flex-wrap:wrap;
+}
+.stat-item{text-align:center;}
+.stat-num{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.stat-lbl{font-size:12px;color:var(--text-muted);font-weight:500;margin-top:2px;}
+
+/* SEARCH BAR */
+.search-section{
+  background:var(--surface);
+  padding:1.25rem 1.5rem;
+  border-bottom:1px solid var(--border);
+}
+.search-wrap{
+  max-width:600px;margin:0 auto;
+  display:flex;align-items:center;gap:0;
+  background:#fff;
+  border:2px solid var(--text);
+  border-radius:var(--radius-pill);
+  padding:4px 4px 4px 18px;
+  transition:box-shadow 0.2s;
+}
+.search-wrap:focus-within{box-shadow:0 0 0 4px rgba(255,214,10,0.3);}
+.search-wrap input{
+  flex:1;border:none;outline:none;
+  font-size:15px;font-family:inherit;
+  background:none;color:var(--text);
+}
+.search-wrap input::placeholder{color:var(--text-light);}
+.search-btn{
+  background:var(--text);color:#fff;border:none;
+  border-radius:var(--radius-pill);padding:10px 22px;
+  font-size:14px;font-weight:700;cursor:pointer;
+  font-family:inherit;white-space:nowrap;transition:opacity 0.15s;
+}
+.search-btn:hover{opacity:0.85;}
+
+/* FILTER AREA */
+.filter-area{
+  background:#fff;
+  border-bottom:1px solid var(--border);
+}
+.region-tabs{
+  display:flex;gap:0;overflow-x:auto;scrollbar-width:none;
+  padding:0 1.5rem;
+  border-bottom:1px solid var(--border);
+}
+.region-tabs::-webkit-scrollbar{display:none;}
+.rtab{
+  flex-shrink:0;
+  padding:14px 18px;
+  font-size:14px;font-weight:600;
+  color:var(--text-muted);cursor:pointer;
+  border-bottom:3px solid transparent;
+  margin-bottom:-1px;white-space:nowrap;
+  background:none;border-top:none;border-left:none;border-right:none;
+  font-family:inherit;transition:color 0.15s;
+}
+.rtab.active{color:var(--text);border-bottom-color:var(--text);}
+.type-filter{
+  display:flex;gap:8px;padding:10px 1.5rem;
+  overflow-x:auto;scrollbar-width:none;align-items:center;
+}
+.type-filter::-webkit-scrollbar{display:none;}
+.tfil{
+  flex-shrink:0;
+  border:1.5px solid var(--border-dark);border-radius:var(--radius-pill);
+  padding:7px 16px;font-size:13px;font-weight:600;
+  cursor:pointer;background:#fff;color:var(--text-muted);
+  font-family:inherit;transition:all 0.15s;
+}
+.tfil.active-all{background:var(--text);border-color:var(--text);color:#fff;}
+.tfil.active-rest{background:var(--tag-rest-bg);border-color:#FFAB91;color:var(--tag-rest);}
+.tfil.active-cafe{background:var(--tag-cafe-bg);border-color:#90CAF9;color:var(--tag-cafe);}
+.tfil.active-both{background:var(--tag-both-bg);border-color:#A5D6A7;color:var(--tag-both);}
+.tfil:hover:not(.active-all):not(.active-rest):not(.active-cafe):not(.active-both){background:var(--surface2);color:var(--text);}
+
+/* QUICK CHIPS */
+.chips-bar{
+  display:flex;gap:8px;padding:12px 1.5rem;
+  overflow-x:auto;scrollbar-width:none;
+  background:var(--surface);border-bottom:1px solid var(--border);
+}
+.chips-bar::-webkit-scrollbar{display:none;}
+.chip{
+  flex-shrink:0;display:flex;align-items:center;gap:5px;
+  border:1.5px solid var(--border-dark);border-radius:var(--radius-pill);
+  padding:6px 14px;font-size:12px;font-weight:600;
+  color:var(--text-muted);cursor:pointer;white-space:nowrap;
+  background:#fff;font-family:inherit;transition:all 0.15s;
+}
+.chip:hover,.chip.active{
+  background:var(--accent);border-color:var(--accent-dark);color:var(--text);
+}
+
+/* LIST HEADER */
+.list-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.25rem 1.5rem 0.75rem;
+}
+.list-count{font-size:14px;color:var(--text-muted);}
+.list-count strong{color:var(--text);font-weight:700;}
+.sort-sel{
+  border:1.5px solid var(--border-dark);border-radius:var(--radius-pill);
+  padding:7px 14px;font-size:13px;font-weight:600;
+  font-family:inherit;color:var(--text-muted);background:#fff;cursor:pointer;
+}
+
+/* HOT SECTION */
+.section-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.5rem 1.5rem 1rem;
+}
+.section-hd h2{
+  font-size:20px;font-weight:800;color:var(--text);letter-spacing:-0.4px;
+}
+.section-hd .more{
+  font-size:13px;font-weight:600;color:var(--text-muted);
+  cursor:pointer;padding:6px 14px;border-radius:var(--radius-pill);
+  transition:background 0.15s;
+}
+.section-hd .more:hover{background:var(--surface2);}
+
+.hot-scroll{
+  display:flex;gap:12px;padding:0 1.5rem 1.25rem;
+  overflow-x:auto;scrollbar-width:none;
+}
+.hot-scroll::-webkit-scrollbar{display:none;}
+.hot-card{
+  flex-shrink:0;width:180px;
+  background:#fff;border:1.5px solid var(--border);
+  border-radius:var(--radius);overflow:hidden;cursor:pointer;
+  transition:transform 0.18s,border-color 0.18s,box-shadow 0.18s;
+}
+.hot-card:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 8px 24px rgba(0,0,0,0.08);}
+.hot-img{
+  width:100%;height:110px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:40px;
+}
+.hot-body{padding:10px 12px 12px;}
+.hot-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.hot-meta{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px;}
+
+/* PROMO */
+.promo-wrap{padding:0 1.5rem 1.5rem;}
+.promo-banner{
+  background:var(--accent);
+  border-radius:var(--radius);
+  padding:1.25rem 1.5rem;
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;
+}
+.promo-text h3{font-size:15px;font-weight:800;color:var(--text);margin-bottom:3px;letter-spacing:-0.3px;}
+.promo-text p{font-size:12px;color:rgba(0,0,0,0.55);font-weight:500;}
+.promo-btn{
+  background:var(--text);border:none;color:#fff;
+  border-radius:var(--radius-pill);padding:9px 18px;
+  font-size:13px;font-weight:700;white-space:nowrap;
+  cursor:pointer;font-family:inherit;transition:opacity 0.15s;
+}
+.promo-btn:hover{opacity:0.8;}
+
+/* CARDS */
+.cards-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:1rem;
+  padding:0 1.5rem 2rem;
+}
+.card{
+  background:#fff;
+  border:1.5px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;cursor:pointer;
+  transition:transform 0.18s,border-color 0.18s,box-shadow 0.18s;
+}
+.card:hover{transform:translateY(-3px);border-color:var(--accent-dark);box-shadow:0 12px 32px rgba(0,0,0,0.09);}
+.card-img{
+  width:100%;height:176px;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+}
+.card-img-emoji{font-size:56px;}
+.card-badge{
+  position:absolute;top:10px;left:10px;
+  font-size:11px;font-weight:700;letter-spacing:0.2px;
+  padding:4px 10px;border-radius:var(--radius-pill);
+}
+.badge-rest{background:var(--tag-rest-bg);color:var(--tag-rest);}
+.badge-cafe{background:var(--tag-cafe-bg);color:var(--tag-cafe);}
+.badge-both{background:var(--tag-both-bg);color:var(--tag-both);}
+.card-fav{
+  position:absolute;top:10px;right:10px;
+  width:32px;height:32px;border-radius:50%;
+  background:rgba(255,255,255,0.95);border:1.5px solid var(--border);
+  cursor:pointer;font-size:15px;
+  display:flex;align-items:center;justify-content:center;
+  transition:border-color 0.15s;
+}
+.card-fav:hover{border-color:var(--accent-dark);}
+.card-body{padding:14px 16px 14px;}
+.card-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;letter-spacing:-0.2px;}
+.card-loc{font-size:12px;color:var(--text-light);margin-bottom:9px;display:flex;align-items:center;gap:3px;}
+.card-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:10px;}
+.tag{
+  font-size:11px;padding:3px 9px;border-radius:var(--radius-pill);
+  background:var(--surface2);color:var(--text-muted);font-weight:600;
+}
+.card-meta{display:flex;align-items:center;justify-content:space-between;}
+.rating{display:flex;align-items:center;gap:5px;font-size:13px;font-weight:700;color:var(--text);}
+.rating span{font-weight:500;font-size:11px;color:var(--text-light);}
+.price-range{font-size:12px;color:var(--text-muted);font-weight:600;}
+
+/* BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(255,255,255,0.97);
+  backdrop-filter:blur(10px);
+  border-top:1px solid var(--border);
+  display:flex;z-index:100;
+  padding-bottom:env(safe-area-inset-bottom,0);
+}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  padding:10px 0 8px;gap:3px;cursor:pointer;background:none;border:none;
+  font-family:inherit;color:var(--text-light);font-size:10px;font-weight:600;
+  transition:color 0.15s;
+}
+.bnav-item.active{color:var(--text);}
+.bnav-icon{font-size:20px;line-height:1;}
+.main-content{padding-bottom:72px;}
+
+/* MODAL */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.4);z-index:200;
+  align-items:flex-end;
+  backdrop-filter:blur(2px);
+}
+.modal-overlay.open{display:flex;}
+.modal-sheet{
+  background:#fff;
+  width:100%;max-height:88vh;
+  border-radius:24px 24px 0 0;
+  overflow-y:auto;
+  animation:slideUp 0.28s cubic-bezier(.32,.72,0,1);
+}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{
+  width:40px;height:4px;
+  background:var(--border-dark);border-radius:2px;
+  margin:12px auto 0;
+}
+.modal-img{
+  width:100%;height:200px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:72px;
+  margin-top:8px;
+}
+.modal-body{padding:1.25rem 1.5rem 2rem;}
+.modal-row{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:6px;}
+.modal-name{font-size:22px;font-weight:800;color:var(--text);letter-spacing:-0.5px;}
+.modal-rating-badge{
+  background:var(--accent);color:var(--text);
+  font-size:13px;font-weight:700;padding:5px 12px;
+  border-radius:var(--radius-pill);flex-shrink:0;margin-left:10px;
+}
+.modal-info-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:1rem 0;
+}
+.info-chip{
+  background:var(--surface);border-radius:var(--radius-sm);
+  padding:10px 12px;border:1px solid var(--border);
+}
+.info-chip .label{font-size:10px;color:var(--text-light);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;margin-bottom:3px;}
+.info-chip .val{font-size:13px;font-weight:600;color:var(--text);}
+.modal-section{margin-top:1.25rem;}
+.modal-section h4{font-size:11px;font-weight:700;color:var(--text-light);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;}
+.review-item{border-top:1px solid var(--border);padding:12px 0;}
+.review-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.review-avatar{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--accent);display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:var(--text);
+}
+.review-nick{font-size:13px;font-weight:700;color:var(--text);}
+.review-stars{font-size:12px;margin-left:auto;letter-spacing:1px;}
+.review-text{font-size:13px;color:var(--text-muted);line-height:1.65;}
+.map-placeholder{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  height:110px;display:flex;align-items:center;justify-content:center;
+  margin-top:8px;gap:6px;flex-direction:column;color:var(--text-muted);
+}
+.cta-row{margin-top:1.5rem;display:flex;gap:8px;}
+.cta-btn{
+  flex:1;padding:14px;border-radius:var(--radius-pill);
+  font-size:14px;font-weight:700;cursor:pointer;
+  font-family:inherit;border:none;transition:opacity 0.15s;
+}
+.cta-primary{background:var(--text);color:#fff;}
+.cta-primary:hover{opacity:0.85;}
+.cta-secondary{background:var(--surface2);color:var(--text);border:1.5px solid var(--border-dark);}
+
+.empty{text-align:center;padding:4rem 1.5rem;color:var(--text-muted);}
+.empty .empty-icon{font-size:48px;margin-bottom:1rem;}
+.empty h3{font-size:17px;font-weight:700;margin-bottom:6px;color:var(--text);}
+
+/* DIVIDER */
+.section-divider{height:1px;background:var(--border);margin:0 1.5rem;}
+
+/* REGISTER MODAL */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.form-group{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:800;color:var(--text);letter-spacing:-0.2px;}
+.form-input,.form-select,.form-textarea{
+  width:100%;border:1.5px solid var(--border-dark);border-radius:var(--radius-sm);
+  padding:11px 12px;font-size:14px;font-family:inherit;color:var(--text);background:#fff;
+  outline:none;transition:border-color .15s,box-shadow .15s;
+}
+.form-input:focus,.form-select:focus,.form-textarea:focus{
+  border-color:var(--accent-dark);box-shadow:0 0 0 3px rgba(255,214,10,.25);
+}
+.form-textarea{min-height:84px;resize:vertical;line-height:1.55;}
+.check-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.check-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  border:1.5px solid var(--border-dark);border-radius:var(--radius-pill);
+  padding:8px 11px;font-size:12px;font-weight:700;color:var(--text-muted);
+  cursor:pointer;user-select:none;background:#fff;
+}
+.check-pill input{accent-color:#111827;}
+.address-row{display:flex;gap:8px;}
+.address-row .form-input{flex:1;}
+.addr-btn{
+  border:none;border-radius:var(--radius-sm);background:var(--text);color:#fff;
+  padding:0 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;
+}
+.menu-row{display:grid;grid-template-columns:1fr 130px;gap:8px;margin-bottom:8px;}
+.image-upload-box{
+  border:1.5px dashed var(--border-dark);border-radius:var(--radius);
+  background:var(--surface);padding:14px;text-align:center;cursor:pointer;
+}
+.image-preview{
+  width:100%;height:160px;border-radius:var(--radius-sm);
+  background:var(--surface2);display:none;align-items:center;justify-content:center;
+  overflow:hidden;margin-top:10px;
+}
+.image-preview img{width:100%;height:100%;object-fit:cover;}
+.form-help{font-size:11px;color:var(--text-light);line-height:1.5;}
+.card-hours{font-size:12px;color:var(--text-muted);margin-bottom:9px;display:flex;align-items:center;gap:4px;font-weight:600;}
+.place-photo{width:100%;height:100%;object-fit:cover;display:block;}
+.modal-menu-list{display:flex;flex-direction:column;gap:8px;}
+.modal-menu-item{display:flex;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;}
+.modal-menu-item strong{color:var(--text);}
+.modal-menu-item span{color:var(--text-muted);font-weight:700;white-space:nowrap;}
+
+@media(max-width:600px){
+  .cards-grid{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr;}
+  .menu-row{grid-template-columns:1fr 110px;}
+  .hero h1{font-size:30px;}
+  .hero-stats{gap:1.25rem;}
+  .nav-links{display:none;}
+}
+
+
+.postcode-layer{display:none;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:min(92vw,520px);height:min(78vh,560px);background:#fff;border:1.5px solid var(--border-dark);border-radius:var(--radius);box-shadow:0 18px 50px rgba(0,0,0,.22);z-index:300;overflow:hidden;}
+.postcode-layer.open{display:block;}
+.postcode-layer-head{display:flex;align-items:center;justify-content:space-between;height:48px;padding:0 14px;border-bottom:1px solid var(--border);font-size:14px;font-weight:800;color:var(--text);background:#fff;}
+.postcode-close{width:32px;height:32px;border-radius:50%;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-size:18px;line-height:1;}
+.postcode-frame{height:calc(100% - 48px);}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-icon">🐾</div>
+    <div class="logo-text">PETWITH</div>
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="#">음식점</a>
+    <a class="nav-link" href="#">카페</a>
+    <a class="nav-link" href="#">지역별</a>
+    <a class="nav-link" href="#">리뷰</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button class="nav-link" style="cursor:pointer;">로그인</button>
+    <button class="nav-cta" onclick="openRegisterModal()">장소 등록 →</button>
+  </div>
+</nav>
+
+<div class="main-content">
+
+<div class="hero">
+  <div class="hero-badge">🐶 전국 애견동반 플레이스 모음</div>
+  <h1>이제는 눈치보지 말고<br><span class="underline">당당하게 입장!</span></h1>
+  <p class="hero-sub">전국 애견동반 음식점과 카페를 한눈에.<br>지역별 · 조건별로 딱 맞는 곳을 찾아보세요.</p>
+  <div class="hero-actions">
+    <button class="btn-hero-primary">음식점 찾기</button>
+    <button class="btn-hero-secondary">카페 찾기</button>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-item"><div class="stat-num" id="totalCountBadge">0+</div><div class="stat-lbl">등록 장소</div></div>
+    <div class="stat-item" style="width:1px;height:32px;background:var(--border);"></div>
+    <div class="stat-item"><div class="stat-num">17개</div><div class="stat-lbl">지역 커버리지</div></div>
+    <div class="stat-item" style="width:1px;height:32px;background:var(--border);"></div>
+    <div class="stat-item"><div class="stat-num">4.8★</div><div class="stat-lbl">평균 평점</div></div>
+  </div>
+</div>
+
+<div class="promo-wrap" style="padding-top:1.5rem;">
+  <div class="promo-banner">
+    <div class="promo-text">
+      <h3>여름 특집! 강아지 동반 루프탑 카페</h3>
+      <p>7월 한정 · 전국 루프탑 카페 모아보기</p>
+    </div>
+    <button class="promo-btn">보기 →</button>
+  </div>
+</div>
+
+<div class="section-hd">
+  <h2>🔥 지금 HOT한 곳</h2>
+  <span class="more" onclick="showAll()">전체보기</span>
+</div>
+<div class="hot-scroll" id="hotScroll"></div>
+
+<div class="section-divider"></div>
+
+<div class="search-section">
+  <div class="search-wrap">
+    <span style="font-size:17px;flex-shrink:0">🔍</span>
+    <input type="text" id="searchInput" placeholder="지역, 업체명, 업종으로 검색해 보세요">
+    <button class="search-btn" onclick="doSearch()">검색</button>
+  </div>
+</div>
+
+<div class="filter-area">
+  <div class="region-tabs" id="regionTabs"></div>
+  <div class="type-filter" id="typeTabs"></div>
+</div>
+
+<div class="chips-bar" id="chipsBar">
+  <div class="chip active" onclick="setChip(this,'')">✨ 전체</div>
+  <div class="chip" onclick="setChip(this,'야외테라스')">🌿 야외테라스</div>
+  <div class="chip" onclick="setChip(this,'실내가능')">🏠 실내가능</div>
+  <div class="chip" onclick="setChip(this,'물·간식제공')">🍖 물·간식제공</div>
+  <div class="chip" onclick="setChip(this,'대형견가능')">🐕 대형견가능</div>
+  <div class="chip" onclick="setChip(this,'소형견전용')">🐩 소형견전용</div>
+  <div class="chip" onclick="setChip(this,'마당있음')">🌳 마당있음</div>
+  <div class="chip" onclick="setChip(this,'전용주차')">🚗 전용주차</div>
+</div>
+
+<div class="list-header">
+  <div class="list-count">총 <strong id="countNum">0</strong>개의 장소</div>
+  <select class="sort-sel" id="sortSel" onchange="renderCards()">
+    <option value="rating">평점 높은순</option>
+    <option value="review">리뷰 많은순</option>
+    <option value="name">이름순</option>
+  </select>
+</div>
+
+<div class="cards-grid" id="cardsGrid">
+  <div class="empty" style="grid-column:1/-1"><p style="font-size:14px;">데이터를 불러오는 중입니다...</p></div>
+</div>
+
+</div>
+
+
+<div class="modal-overlay" id="registerOverlay" onclick="closeRegisterModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-body">
+      <div class="modal-row" style="margin-bottom:18px;">
+        <div>
+          <div class="modal-name">장소 등록</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">반려견 동반 가능한 맛집·카페 정보를 등록하세요.</p>
+        </div>
+        <button class="card-fav" style="position:static;" onclick="closeRegisterModalDirect()">✕</button>
+      </div>
+
+      <form id="placeForm" onsubmit="submitPlace(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="placeName">장소명 *</label>
+            <input class="form-input" id="placeName" required placeholder="예: 멍푸치노 카페">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="placeType">업종 *</label>
+            <select class="form-select" id="placeType" required>
+              <option value="restaurant">음식점</option>
+              <option value="cafe">카페</option>
+              <option value="both">복합</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="placeRegion">지역 *</label>
+            <select class="form-select" id="placeRegion" required>
+              <option>부산</option>
+              <option>서울/경기</option>
+              <option>강원</option>
+              <option>제주</option>
+              <option>경상</option>
+              <option>전라/충청</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="placeHours">운영시간 *</label>
+            <input class="form-input" id="placeHours" required placeholder="예: 11:00 - 21:00">
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">주소 *</label>
+            <div class="address-row">
+              <input class="form-input" id="postcode" placeholder="우편번호" readonly required>
+              <button type="button" class="addr-btn" onclick="searchPostcode()">우편번호 검색</button>
+            </div>
+            <input class="form-input" id="baseAddress" style="margin-top:8px;" placeholder="시/군/구 자동입력" readonly required>
+            <input class="form-input" id="detailAddress" style="margin-top:8px;" placeholder="상세주소를 입력하세요. 예: 해운대해변로 123, 1층" required>
+          </div>
+          
+
+          <div class="form-group full">
+            <label class="form-label" for="placeDesc">장소 설명</label>
+            <textarea class="form-textarea" id="placeDesc" placeholder="장소 분위기, 반려견 동반 이용 팁 등을 입력하세요."></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">tags 선택</label>
+            <div class="check-grid" id="tagChecks"></div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">dogPolicy 선택</label>
+            <div class="check-grid" id="dogPolicyChecks"></div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">이미지 첨부</label>
+            <label class="image-upload-box" for="placeImage">
+              <strong>이미지 선택</strong>
+              <div class="form-help">등록 시 가로 900px 이하로 자동 조절되고 카드/상세에서는 일정 크기로 표시됩니다.</div>
+              <input type="file" id="placeImage" accept="image/*" style="display:none;" onchange="handleImageUpload(event)">
+              <div class="image-preview" id="imagePreview"></div>
+            </label>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">대표 메뉴 5개 / 가격 *</label>
+            <div class="form-help" style="margin-bottom:8px;">메인 리스트 가격대에는 1번 메뉴의 가격이 노출됩니다.</div>
+            <div id="menuInputs"></div>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button type="button" class="cta-btn cta-secondary" onclick="closeRegisterModalDirect()">취소</button>
+          <button type="submit" class="cta-btn cta-primary">등록하기 →</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="bnav-item active">
+    <span class="bnav-icon">🏠</span>홈
+  </button>
+  <button class="bnav-item">
+    <span class="bnav-icon">🔍</span>검색
+  </button>
+  <button class="bnav-item">
+    <span class="bnav-icon">❤️</span>찜
+  </button>
+  <button class="bnav-item">
+    <span class="bnav-icon">📖</span>리뷰
+  </button>
+  <button class="bnav-item">
+    <span class="bnav-icon">👤</span>MY
+  </button>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal-sheet" id="modalSheet">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<script>
+const SHEET_ID = '1-XF6rXkR_3N7f-t7YhVl3pQJpY5FfDqP-YourActualIDHere'; 
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+
+let PLACES = []; 
+
+const REGIONS=["전체","부산","서울/경기","강원","제주","경상","전라/충청"];
+const TYPES=[
+  {id:"all",label:"전체",cls:"active-all"},
+  {id:"restaurant",label:"🍽️ 음식점",cls:"active-rest"},
+  {id:"cafe",label:"☕ 카페",cls:"active-cafe"},
+  {id:"both",label:"🍽️☕ 복합",cls:"active-both"}
+];
+
+let curRegion="전체",curType="all",curTag="",searchQ="";
+let favs=new Set();
+let uploadedImageDataUrl = '';
+
+const TAG_OPTIONS = ['야외테라스','실내가능','물·간식제공','대형견가능','소형견전용','마당있음','전용주차'];
+const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','물 제공','간식 제공'];
+
+function escapeHtml(value=''){
+  return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+}
+function formatPrice(value){
+  const n = Number(String(value).replace(/[^0-9]/g,''));
+  return n ? n.toLocaleString('ko-KR') + '원' : escapeHtml(value);
+}
+function getPrimaryPrice(p){
+  if (p.menus && p.menus.length && p.menus[0].price) return formatPrice(p.menus[0].price);
+  return p.priceRange || '';
+}
+function getPlaceImage(p){
+  if (p.imageUrl) return `<img class="place-photo" src="${p.imageUrl}" alt="${escapeHtml(p.name)} 이미지">`;
+  return `<span class="card-img-emoji">${p.emoji || '🐾'}</span>`;
+}
+
+// ⚠️ 동적 생성 시 충돌을 차단하기 위해 초기 1회만 고정 실행하도록 뼈대 생성 유지
+function initRegisterForm(){
+  document.getElementById('tagChecks').innerHTML = TAG_OPTIONS.map(t => `
+    <label class="check-pill"><input type="checkbox" name="tags" value="${t}">${t}</label>
+  `).join('');
+  document.getElementById('dogPolicyChecks').innerHTML = DOG_POLICY_OPTIONS.map(t => `
+    <label class="check-pill"><input type="checkbox" name="dogPolicy" value="${t}">${t}</label>
+  `).join('');
+  
+  document.getElementById('menuInputs').innerHTML = Array.from({length:5}, (_,i) => `
+    <div class="menu-row">
+      <input class="form-input" id="menuName${i+1}" ${i===0?'required':''} placeholder="${i+1}번 대표 메뉴명">
+      <input class="form-input" id="menuPrice${i+1}" ${i===0?'required':''} inputmode="numeric" placeholder="가격">
+    </div>
+  `).join('');
+}
+
+function openRegisterModal(){
+  initRegisterForm();
+  document.getElementById('registerOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeRegisterModal(e){
+  if(e.target===document.getElementById('registerOverlay')) closeRegisterModalDirect();
+}
+function closeRegisterModalDirect(){
+  document.getElementById('registerOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// ⚠️ 버그 완전 박멸: 모달 스크롤 고정과 포커스 간섭을 완전히 파괴하는 순수 브라우저 뉴팝업 오픈 로직
+function closePostcodeLayer(){
+  const oldLayer = document.getElementById('postcodeLayer');
+  if(oldLayer) oldLayer.remove();
+}
+
+function searchPostcode(){
+  if(!window.daum || !window.daum.Postcode){
+    alert('우편번호 검색 스크립트를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.');
+    return;
+  }
+
+  closePostcodeLayer();
+
+  const layer = document.createElement('div');
+  layer.id = 'postcodeLayer';
+  layer.style.cssText = `
+    position:fixed;
+    inset:0;
+    z-index:999999;
+    background:rgba(0,0,0,.45);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  `;
+
+  layer.innerHTML = `
+    <div style="width:min(520px,100%);height:min(620px,86vh);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.28);">
+      <div style="height:48px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid #E5E7EB;font-weight:800;">
+        <span>우편번호 검색</span>
+        <button type="button" onclick="closePostcodeLayer()" style="width:32px;height:32px;border-radius:50%;border:1px solid #D1D5DB;background:#fff;cursor:pointer;font-size:18px;">×</button>
+      </div>
+      <div id="postcodeFrame" style="height:calc(100% - 48px);"></div>
+    </div>
+  `;
+
+  document.body.appendChild(layer);
+
+  new daum.Postcode({
+    oncomplete: function(data){
+      const postcode = document.getElementById('postcode');
+      const baseAddress = document.getElementById('baseAddress');
+      const detailAddress = document.getElementById('detailAddress');
+      const region = document.getElementById('placeRegion');
+
+      const sigungu = [data.sido, data.sigungu].filter(Boolean).join(' ');
+      const fallbackAddress = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
+
+      postcode.value = data.zonecode || '';
+      baseAddress.value = sigungu || fallbackAddress || '';
+
+      const sido = data.sido || '';
+      if(region){
+        if(sido.includes('부산')) region.value = '부산';
+        else if(sido.includes('서울') || sido.includes('경기') || sido.includes('인천')) region.value = '서울/경기';
+        else if(sido.includes('강원')) region.value = '강원';
+        else if(sido.includes('제주')) region.value = '제주';
+        else if(sido.includes('경남') || sido.includes('경북') || sido.includes('대구') || sido.includes('울산')) region.value = '경상';
+        else if(sido.includes('충남') || sido.includes('충북') || sido.includes('전남') || sido.includes('전북') || sido.includes('대전') || sido.includes('광주') || sido.includes('세종')) region.value = '전라/충청';
+      }
+
+      closePostcodeLayer();
+      setTimeout(() => detailAddress && detailAddress.focus(), 50);
+    },
+    width: '100%',
+    height: '100%'
+  }).embed(document.getElementById('postcodeFrame'));
+}
+
+function handleImageUpload(e){
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    const img = new Image();
+    img.onload = function(){
+      const maxW = 900;
+      const scale = Math.min(1, maxW / img.width);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      uploadedImageDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+      document.getElementById('imagePreview').style.display='flex';
+      document.getElementById('imagePreview').innerHTML = `<img src="${uploadedImageDataUrl}" alt="첨부 이미지 미리보기">`;
+    };
+    img.src = evt.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitPlace(e){
+  e.preventDefault();
+  const selectedTags = [...document.querySelectorAll('input[name="tags"]:checked')].map(x=>x.value);
+  const selectedPolicies = [...document.querySelectorAll('input[name="dogPolicy"]:checked')].map(x=>x.value);
+  
+  const menus = Array.from({length:5}, (_,i)=>{
+    const nameEl = document.getElementById(`menuName${i+1}`);
+    const priceEl = document.getElementById(`menuPrice${i+1}`);
+    return {
+      name: nameEl ? nameEl.value.trim() : '',
+      price: priceEl ? priceEl.value.trim() : ''
+    };
+  }).filter(m=>m.name || m.price);
+
+  const newPlace = {
+    id: Date.now(),
+    name: document.getElementById('placeName').value.trim(),
+    type: document.getElementById('placeType').value,
+    region: document.getElementById('placeRegion').value,
+    address: `${document.getElementById('baseAddress').value.trim()} ${document.getElementById('detailAddress').value.trim()}`.trim(),
+    hours: document.getElementById('placeHours').value.trim(),
+    desc: document.getElementById('placeDesc').value.trim() || '새로 등록된 반려견 동반 장소입니다.',
+    tags: selectedTags,
+    dogPolicy: selectedPolicies.join(' · ') || '정책 확인 필요',
+    menus,
+    priceRange: menus[0] ? formatPrice(menus[0].price) : '',
+    imageUrl: uploadedImageDataUrl,
+    emoji: '🐾',
+    rating: 0,
+    reviewCount: 0,
+    reviews: [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}]
+  };
+
+  PLACES.unshift(newPlace);
+  uploadedImageDataUrl = '';
+  e.target.reset();
+  closeRegisterModalDirect();
+  document.getElementById('totalCountBadge').textContent = `${PLACES.length.toLocaleString()}+`;
+  renderHot();
+  renderCards();
+  window.scrollTo({top: document.querySelector('.list-header').offsetTop - 70, behavior:'smooth'});
+}
+
+async function fetchSheetsData() {
+  try {
+    const response = await fetch(SHEET_URL);
+    const csvText = await response.text();
+    
+    const lines = csvText.split('\n').map(line => {
+      return line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || [];
+    });
+    
+    if (lines.length < 2) return;
+    
+    const headers = lines[0].map(h => h.replace(/"/g, '').trim());
+    
+    PLACES = lines.slice(1).map(line => {
+      if (line.length === 0) return null;
+      let obj = {};
+      headers.forEach((header, index) => {
+        let value = line[index] ? line[index].replace(/"/g, '').trim() : '';
+        
+        if (header === 'id' || header === 'reviewCount') {
+          obj[header] = parseInt(value) || 0;
+        } else if (header === 'rating') {
+          obj[header] = parseFloat(value) || 0.0;
+        } else if (header === 'tags') {
+          obj[header] = value ? value.split(',').map(t => t.trim()) : [];
+        } else {
+          obj[header] = value;
+        }
+      });
+      
+      obj['reviews'] = obj['reviews'] ? JSON.parse(obj['reviews']) : [
+        {nick:"멍멍이", stars:"⭐⭐⭐⭐⭐", text:"동반하기 정말 좋은 곳이에요!"}
+      ];
+      
+      return obj;
+    }).filter(item => item && item.id);
+
+    document.getElementById('totalCountBadge').textContent = `${PLACES.length.toLocaleString()}+`;
+
+    initTabs();
+    renderHot();
+    renderCards();
+
+  } catch (error) {
+    console.error("구글 시트 데이터를 불러오는데 실패했습니다:", error);
+    document.getElementById('cardsGrid').innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⚠️</div><h3>데이터 로드 실패</h3><p style="font-size:13px;margin-top:4px">SHEET_ID 설정 및 웹 게시 상태를 확인해보세요.</p></div>`;
+  }
+}
+
+function initTabs(){
+  const rt=document.getElementById('regionTabs');
+  rt.innerHTML = ''; 
+  REGIONS.forEach(r=>{
+    const b=document.createElement('button');
+    b.className='rtab'+(r==="전체"?' active':'');
+    b.textContent=r;
+    b.onclick=()=>{
+      document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');curRegion=r;renderCards();
+    };
+    rt.appendChild(b);
+  });
+  
+  const tt=document.getElementById('typeTabs');
+  tt.innerHTML = ''; 
+  TYPES.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tfil'+(t.id==='all'?' '+t.cls:'');
+    b.textContent=t.label;b.dataset.type=t.id;b.dataset.cls=t.cls;
+    b.onclick=()=>{
+      document.querySelectorAll('.tfil').forEach(x=>{x.classList.remove('active-all','active-rest','active-cafe','active-both');});
+      b.classList.add(t.cls);curType=t.id;renderCards();
+    };
+    tt.appendChild(b);
+  });
+}
+
+function setChip(el,tag){
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');curTag=tag;renderCards();
+}
+
+function doSearch(){
+  searchQ=document.getElementById('searchInput').value.trim();renderCards();
+}
+document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
+
+function filtered(){
+  return PLACES.filter(p=>{
+    if(curRegion!=="전체"&&p.region!==curRegion)return false;
+    if(curType!=="all"&&p.type!==curType)return false;
+    if(curTag&&!p.tags.includes(curTag))return false;
+    if(searchQ&&!p.name.includes(searchQ)&&!p.address.includes(searchQ)&&!p.region.includes(searchQ))return false;
+    return true;
+  });
+}
+function sorted(arr){
+  const s=document.getElementById('sortSel').value;
+  return [...arr].sort((a,b)=>{
+    if(s==='rating')return b.rating-a.rating;
+    if(s==='review')return b.reviewCount-a.reviewCount;
+    return a.name.localeCompare(b.name,'ko');
+  });
+}
+function typeLabel(t){
+  if(t==='restaurant')return{txt:'음식점',cls:'badge-rest'};
+  if(t==='cafe')return{txt:'카페',cls:'badge-cafe'};
+  return{txt:'복합',cls:'badge-both'};
+}
+function bgColor(type){
+  if(type==='restaurant')return '#FFF3E0';
+  if(type==='cafe')return '#E3F2FD';
+  return '#E8F5E9';
+}
+function toggleFav(id,btn){
+  if(favs.has(id)){favs.delete(id);btn.textContent='🤍';}
+  else{favs.add(id);btn.textContent='❤️';}
+}
+
+function renderCards(){
+  const data=sorted(filtered());
+  document.getElementById('countNum').textContent=data.length;
+  const grid=document.getElementById('cardsGrid');
+  if(!data.length){
+    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>조건에 맞는 장소가 없어요</h3><p style="font-size:13px;margin-top:4px">필터를 조정해보세요</p></div>`;
+    return;
+  }
+  grid.innerHTML=data.map(p=>{
+    const tl=typeLabel(p.type);
+    const fav=favs.has(p.id)?'❤️':'🤍';
+    const tags=p.tags.slice(0,3).map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
+    return `
+    <div class="card" onclick="openModal(${p.id})">
+      <div class="card-img" style="background:${bgColor(p.type)}">
+        ${getPlaceImage(p)}
+        <span class="card-badge ${tl.cls}">${tl.txt}</span>
+        <button class="card-fav" onclick="event.stopPropagation();toggleFav(${p.id},this)">${fav}</button>
+      </div>
+      <div class="card-body">
+        <div class="card-name">${escapeHtml(p.name)}</div>
+        <div class="card-loc">📍 ${escapeHtml(p.address.split(' ').slice(0,3).join(' '))}</div>
+        <div class="card-hours">🕒 ${escapeHtml(p.hours || '운영시간 확인 필요')}</div>
+        <div class="card-tags">${tags}</div>
+        <div class="card-meta">
+          <div class="rating">⭐ ${p.rating} <span>(${p.reviewCount.toLocaleString()})</span></div>
+          <div class="price-range">${getPrimaryPrice(p)}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHot(){
+  const hot=[...PLACES].sort((a,b)=>b.reviewCount-a.reviewCount).slice(0,6);
+  document.getElementById('hotScroll').innerHTML=hot.map(p=>`
+    <div class="hot-card" onclick="openModal(${p.id})">
+      <div class="hot-img" style="background:${bgColor(p.type)}">${getPlaceImage(p)}</div>
+      <div class="hot-body">
+        <div class="hot-name">${escapeHtml(p.name)}</div>
+        <div class="hot-meta">⭐ ${p.rating} · ${escapeHtml(p.region)}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openModal(id){
+  const p=PLACES.find(x=>x.id===id);if(!p)return;
+  const tl=typeLabel(p.type);
+  const tags=p.tags.map(t=>`<span class="tag">${escapeHtml(t)}</span>`).join('');
+  const menus=(p.menus || []).slice(0,5).map(m=>`
+    <div class="modal-menu-item"><strong>${escapeHtml(m.name)}</strong><span>${formatPrice(m.price)}</span></div>
+  `).join('');
+  const reviews=p.reviews.map(r=>`
+    <div class="review-item">
+      <div class="review-top">
+        <div class="review-avatar">${r.nick ? r.nick[0] : '🐾'}</div>
+        <span class="review-nick">${r.nick || '익명'}</span>
+        <span class="review-stars">${r.stars || '⭐⭐⭐⭐⭐'}</span>
+      </div>
+      <div class="review-text">${r.text || '리뷰 내용이 없습니다.'}</div>
+    </div>
+  `).join('');
+  document.getElementById('modalContent').innerHTML=`
+    <div class="modal-img" style="background:${bgColor(p.type)}">${getPlaceImage(p)}</div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-name">${p.name}</div>
+        <div class="modal-rating-badge">⭐ ${p.rating}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${tags}</div>
+      <p style="font-size:14px;color:var(--text-muted);line-height:1.7">${p.desc}</p>
+      <div class="modal-info-grid">
+        <div class="info-chip"><div class="label">운영시간</div><div class="val">${p.hours}</div></div>
+        <div class="info-chip"><div class="label">대표 가격</div><div class="val">${getPrimaryPrice(p)}</div></div>
+        <div class="info-chip" style="grid-column:1/-1"><div class="label">🐶 반려견 정책</div><div class="val">${p.dogPolicy}</div></div>
+      </div>
+      ${menus ? `<div class="modal-section">
+        <h4>대표 메뉴</h4>
+        <div class="modal-menu-list">${menus}</div>
+      </div>` : ''}
+      <div class="modal-section">
+        <h4>위치</h4>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:6px">${p.address}</p>
+        <div class="map-placeholder"><span style="font-size:28px">🗺️</span><span style="font-size:12px;font-weight:600">지도 보기</span></div>
+      </div>
+      <div class="modal-section">
+        <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
+        ${reviews}
+      </div>
+      <div class="cta-row">
+        <button class="cta-btn cta-secondary" onclick="closeModalDirect()">닫기</button>
+        <button class="cta-btn cta-primary">길찾기 →</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
+function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
+function showAll(){curRegion="전체";curType="all";document.querySelectorAll('.rtab')[0].click();}
+
+fetchSheetsData();
+</script>
+</body>
+</html>
