@@ -845,7 +845,7 @@ function searchPostcode(){
       const fallbackAddress = data.userSelectedType === 'R' ? data.roadAddress : data.jibunAddress;
 
       postcode.value = data.zonecode || '';
-      baseAddress.value = sigungu || fallbackAddress || '';
+      baseAddress.value = fullAddress || '';
 
       const sido = data.sido || '';
       if(region){
