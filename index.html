@@ -1271,9 +1271,33 @@ function renderPlaceMap(place){
   });
 }
 
+function getDirectionsAddress(address){
+  const raw = String(address || '').trim().replace(/\s+/g, ' ');
+  if(!raw) return '';
+
+  const withoutDetailLabel = raw
+    .replace(/\s*,\s*(?:상세주소\s*)?[^,]*?(?:층|호|호실|동|실)\s*$/g, '')
+    .trim();
+  const parts = withoutDetailLabel.split(' ');
+  const last = parts[parts.length - 1] || '';
+
+  if(/^\d+(?:층|호|호실|동|실)$/.test(last) || /^[A-Za-z]?\d{1,4}(?:호|호실)$/.test(last)){
+    parts.pop();
+    return parts.join(' ');
+  }
+
+  const numericParts = parts.filter(part => /^\d+(?:-\d+)?$/.test(part));
+  if(numericParts.length >= 2 && /^\d{1,4}$/.test(last)){
+    parts.pop();
+    return parts.join(' ');
+  }
+
+  return withoutDetailLabel;
+}
+
 function openNaverDirections(){
   const destination = currentDestination || {};
-  const address = destination.address || '';
+  const address = getDirectionsAddress(destination.address || '');
 
   if(destination.lat && destination.lng){
     const lng = destination.lng;
