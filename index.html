@@ -836,8 +836,29 @@ function getPrimaryPrice(p){
   return p.priceRange || '';
 }
 
+function normalizeImageUrl(url){
+  if(!url) return '';
+
+  const raw = String(url).trim();
+  if(!raw) return '';
+
+  try {
+    const parsed = new URL(raw);
+    if(parsed.hostname.includes('drive.google.com')){
+      const id = parsed.searchParams.get('id');
+      if(id) return `https://lh3.googleusercontent.com/d/${id}=w1000`;
+    }
+  } catch(e) {}
+
+  const fileDriveMatch = raw.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if(fileDriveMatch) return `https://lh3.googleusercontent.com/d/${fileDriveMatch[1]}=w1000`;
+
+  return raw;
+}
+
 function getPlaceImage(p){
-  if (p.imageUrl) return `<img class="place-photo" src="${p.imageUrl}" alt="${escapeHtml(p.name)} 이미지">`;
+  const imageUrl = normalizeImageUrl(p.imageUrl);
+  if (imageUrl) return `<img class="place-photo" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(p.name)} 이미지" referrerpolicy="no-referrer" loading="lazy" onerror="this.outerHTML='<span class=&quot;card-img-emoji&quot;>🐾</span>'">`;
   return `<span class="card-img-emoji">${p.emoji || '🐾'}</span>`;
 }
 
