@@ -1154,7 +1154,7 @@ function openModal(id){
   const menus = toArray(p.menus).slice(0,5).map(m=>`
   <div class="modal-menu-item"><strong>${escapeHtml(m.name || '')}</strong><span>${formatPrice(m.price || '')}</span></div>
 `).join('');
-  const reviews=p.reviews.map(r=>`
+  const reviews=toArray(p.reviews).map(r=>`
     <div class="review-item">
       <div class="review-top">
         <div class="review-avatar">${r.nick ? r.nick[0] : '🐾'}</div>
