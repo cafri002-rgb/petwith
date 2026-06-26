@@ -890,13 +890,16 @@ function normalizeImageUrl(url){
 
 function getPlaceImages(p){
   const images = [];
+  const primary = normalizeImageUrl(p.imageUrl);
+
+  if(primary) images.push(primary);
+
   toArray(p.imageUrls).forEach(url => {
     const normalized = normalizeImageUrl(url);
-    if(normalized && !images.includes(normalized)) images.push(normalized);
+    if(normalized && normalized !== '🐾' && !images.includes(normalized)) {
+      images.push(normalized);
+    }
   });
-
-  const primary = normalizeImageUrl(p.imageUrl);
-  if(primary && !images.includes(primary)) images.unshift(primary);
 
   return images.slice(0, 3);
 }
