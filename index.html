@@ -521,10 +521,10 @@ nav{
     <div class="logo-text">PETWITH</div>
   </a>
   <div class="nav-links">
-    <a class="nav-link" href="#">음식점</a>
-    <a class="nav-link" href="#">카페</a>
-    <a class="nav-link" href="#">지역별</a>
-    <a class="nav-link" href="#">리뷰</a>
+    <button class="nav-link" type="button" onclick="showTypePage('restaurant')">음식점</button>
+    <button class="nav-link" type="button" onclick="showTypePage('cafe')">카페</button>
+    <button class="nav-link" type="button" onclick="showRegionPage()">지역별</button>
+    <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
     <button class="nav-link" style="cursor:pointer;">로그인</button>
@@ -539,8 +539,8 @@ nav{
   <h1>이제는 눈치보지 말고<br><span class="underline">당당하게 입장!</span></h1>
   <p class="hero-sub">전국 애견동반 음식점과 카페를 한눈에.<br>지역별 · 조건별로 딱 맞는 곳을 찾아보세요.</p>
   <div class="hero-actions">
-    <button class="btn-hero-primary">음식점 찾기</button>
-    <button class="btn-hero-secondary">카페 찾기</button>
+    <button class="btn-hero-primary" onclick="showTypePage('restaurant')">음식점 찾기</button>
+    <button class="btn-hero-secondary" onclick="showTypePage('cafe')">카페 찾기</button>
   </div>
   <div class="hero-stats">
     <div class="stat-item"><div class="stat-num" id="totalCountBadge">0+</div><div class="stat-lbl">등록 장소</div></div>
@@ -1241,7 +1241,55 @@ function openModal(id){
 }
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
-function showAll(){curRegion="전체";curType="all";document.querySelectorAll('.rtab')[0].click();}
+function scrollToList(){
+  const target = document.querySelector('.filter-area') || document.querySelector('.list-header');
+  if(target) window.scrollTo({top: target.offsetTop - 70, behavior:'smooth'});
+}
+function setActiveTypeButton(type){
+  document.querySelectorAll('.tfil').forEach(x=>x.classList.remove('active-all','active-rest','active-cafe','active-both'));
+  const btn = document.querySelector(`.tfil[data-type="${type}"]`);
+  if(btn) btn.classList.add(btn.dataset.cls);
+}
+function setActiveRegionButton(region){
+  document.querySelectorAll('.rtab').forEach(x=>x.classList.toggle('active', x.textContent === region));
+}
+function resetQuickChips(){
+  curTag = '';
+  document.querySelectorAll('.chip').forEach((chip, index)=>chip.classList.toggle('active', index === 0));
+}
+function showTypePage(type){
+  curRegion = '전체';
+  curType = type;
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  resetQuickChips();
+  setActiveRegionButton('전체');
+  setActiveTypeButton(type);
+  renderCards();
+  scrollToList();
+}
+function showRegionPage(){
+  curRegion = '전체';
+  curType = 'all';
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  resetQuickChips();
+  setActiveRegionButton('전체');
+  setActiveTypeButton('all');
+  renderCards();
+  scrollToList();
+}
+function showAll(){
+  curRegion = '전체';
+  curType = 'all';
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  resetQuickChips();
+  setActiveRegionButton('전체');
+  setActiveTypeButton('all');
+  renderCards();
+  scrollToList();
+}
 
 fetchSheetsData();
 </script>
