@@ -1321,6 +1321,7 @@ function openNaverDirections(){
 function renderPlaceMap(place){
   const mapEl = document.getElementById('placeMap');
   if(!mapEl) return;
+  const mapSearchAddress = getDirectionsAddress(place.address || '');
 
  currentDestination = {
   name: place.name || '도착지',
@@ -1329,7 +1330,7 @@ function renderPlaceMap(place){
   lng: null
 };
 
-  if(!place.address){
+  if(!mapSearchAddress){
     mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 정보가 없습니다</span>';
     return;
   }
@@ -1340,7 +1341,7 @@ function renderPlaceMap(place){
   }
 
   const geocoder = new kakao.maps.services.Geocoder();
-  geocoder.addressSearch(place.address, function(result, status){
+  geocoder.addressSearch(mapSearchAddress, function(result, status){
     if(status !== kakao.maps.services.Status.OK || !result.length){
       mapEl.innerHTML = '<span style="font-size:12px;font-weight:600">주소 위치를 찾지 못했습니다</span>';
       return;
