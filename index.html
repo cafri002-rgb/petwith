@@ -1255,13 +1255,13 @@ function openNaverDirections(){
   const address = destination.address || '';
 
   if(destination.lat && destination.lng){
-    const encodedAddress = encodeURIComponent(address || '도착지');
     const lng = destination.lng;
     const lat = destination.lat;
+    const encodedAddress = encodeURIComponent(address || '도착지');
 
     window.open(
       'https://map.naver.com/p/directions/-/' +
-      lng + ',' + lat + ',' + encodedAddress + ',PLACE_POI/-/car',
+      lng + ',' + lat + ',' + encodedAddress + ',ADDRESS_POI/-/car',
       '_blank'
     );
     return;
@@ -1319,20 +1319,7 @@ function renderPlaceMap(place){
   });
 }
 
-function openNaverDirections(){
-  if(currentDestination && currentDestination.lat && currentDestination.lng){
-    const lng = currentDestination.lng;
-    const lat = currentDestination.lat;
-    const name = encodeURIComponent(currentDestination.name || '도착지');
-    window.open('https://map.naver.com/p/directions/-/' + lng + ',' + lat + ',' + name + ',PLACE_POI/-/car', '_blank');
-    return;
-  }
 
-  const keyword = currentDestination
-    ? ((currentDestination.name || '') + ' ' + (currentDestination.address || '')).trim()
-    : '';
-  window.open('https://map.naver.com/p/search/' + encodeURIComponent(keyword || '도착지'), '_blank');
-}
 
 function openModal(id){
   const p=PLACES.find(x=>x.id===id);if(!p)return;
