@@ -472,6 +472,7 @@ nav{
 .check-pill input{accent-color:#111827;}
 .address-row{display:flex;gap:8px;}
 .address-row .form-input{flex:1;}
+.time-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .addr-btn{
   border:none;border-radius:var(--radius-sm);background:var(--text);color:#fff;
   padding:0 14px;font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;white-space:nowrap;
@@ -647,8 +648,11 @@ nav{
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label" for="placeHours">운영시간 *</label>
-            <input class="form-input" id="placeHours" required placeholder="예: 11:00 - 21:00">
+            <label class="form-label">운영시간 *</label>
+            <div class="time-row">
+              <select class="form-select" id="openTime" required></select>
+              <select class="form-select" id="closeTime" required></select>
+            </div>
           </div>
 
           <div class="form-group full">
@@ -750,6 +754,11 @@ let uploadedImageDataUrl = '';
 
 const TAG_OPTIONS = ['야외테라스','실내가능','물·간식제공','대형견가능','소형견전용','마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','물 제공','간식 제공'];
+const TIME_OPTIONS = Array.from({length:48}, (_,i) => {
+  const h = String(Math.floor(i / 2)).padStart(2, '0');
+  const m = i % 2 === 0 ? '00' : '30';
+  return h + ':' + m;
+});
 
 function escapeHtml(value=''){
   return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -769,6 +778,12 @@ function getPlaceImage(p){
 
 // ⚠️ 동적 생성 시 충돌을 차단하기 위해 초기 1회만 고정 실행하도록 뼈대 생성 유지
 function initRegisterForm(){
+  const timeOptions = TIME_OPTIONS.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+  document.getElementById('openTime').innerHTML = '<option value="">오픈시간</option>' + timeOptions;
+  document.getElementById('closeTime').innerHTML = '<option value="">마감시간</option>' + timeOptions;
+  document.getElementById('openTime').value = '10:00';
+  document.getElementById('closeTime').value = '21:00';
+
   document.getElementById('tagChecks').innerHTML = TAG_OPTIONS.map(t => `
     <label class="check-pill"><input type="checkbox" name="tags" value="${t}">${t}</label>
   `).join('');
@@ -893,6 +908,14 @@ function handleImageUpload(e){
 
 function submitPlace(e){
   e.preventDefault();
+  const openTime = document.getElementById('openTime').value;
+  const closeTime = document.getElementById('closeTime').value;
+
+  if(!openTime || !closeTime){
+    alert('오픈시간과 마감시간을 선택해주세요.');
+    return;
+  }
+
   const selectedTags = [...document.querySelectorAll('input[name="tags"]:checked')].map(x=>x.value);
   const selectedPolicies = [...document.querySelectorAll('input[name="dogPolicy"]:checked')].map(x=>x.value);
   
@@ -911,7 +934,7 @@ function submitPlace(e){
     type: document.getElementById('placeType').value,
     region: document.getElementById('placeRegion').value,
     address: `${document.getElementById('baseAddress').value.trim()} ${document.getElementById('detailAddress').value.trim()}`.trim(),
-    hours: document.getElementById('placeHours').value.trim(),
+    hours: openTime + ' - ' + closeTime,
     desc: document.getElementById('placeDesc').value.trim() || '새로 등록된 반려견 동반 장소입니다.',
     tags: selectedTags,
     dogPolicy: selectedPolicies.join(' · ') || '정책 확인 필요',
