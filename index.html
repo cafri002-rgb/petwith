@@ -731,6 +731,8 @@ nav{
 <script>
 const SHEET_ID = '1-XF6rXkR_3N7f-t7YhVl3pQJpY5FfDqP-YourActualIDHere'; 
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv`;
+const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbylUbnyXF1_RNO1j2FvjVycxfeLyV3imLkFK_tfUM9rtwQrkGGjZFJlxQ3861sxMKHK/exec';
+
 
 let PLACES = []; 
 
@@ -921,6 +923,15 @@ function submitPlace(e){
     reviewCount: 0,
     reviews: [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}]
   };
+
+  fetch(SHEET_WRITE_URL, {
+  method: 'POST',
+  mode: 'no-cors',
+  headers: {
+    'Content-Type': 'text/plain;charset=utf-8'
+  },
+  body: JSON.stringify(newPlace)
+});
 
   PLACES.unshift(newPlace);
   uploadedImageDataUrl = '';
