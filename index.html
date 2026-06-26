@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>펫위드 - 반려견 동반 맛집 & 카페</title>
+<title>펫위드 - 반려견 동반 플레이스</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
@@ -28,10 +28,12 @@
   --white:#FFFFFF;
   --tag-rest-bg:#FFF3E0;
   --tag-rest:#D84315;
+  --tag-bar-bg:#FCE7F3;
+  --tag-bar:#BE185D;
   --tag-cafe-bg:#E3F2FD;
   --tag-cafe:#1565C0;
-  --tag-both-bg:#E8F5E9;
-  --tag-both:#2E7D32;
+  --tag-view-bg:#E8F5E9;
+  --tag-view:#2E7D32;
   --radius:16px;
   --radius-sm:10px;
   --radius-pill:100px;
@@ -211,9 +213,10 @@ nav{
 }
 .tfil.active-all{background:var(--text);border-color:var(--text);color:#fff;}
 .tfil.active-rest{background:var(--tag-rest-bg);border-color:#FFAB91;color:var(--tag-rest);}
+.tfil.active-bar{background:var(--tag-bar-bg);border-color:#F9A8D4;color:var(--tag-bar);}
 .tfil.active-cafe{background:var(--tag-cafe-bg);border-color:#90CAF9;color:var(--tag-cafe);}
-.tfil.active-both{background:var(--tag-both-bg);border-color:#A5D6A7;color:var(--tag-both);}
-.tfil:hover:not(.active-all):not(.active-rest):not(.active-cafe):not(.active-both){background:var(--surface2);color:var(--text);}
+.tfil.active-view{background:var(--tag-view-bg);border-color:#A5D6A7;color:var(--tag-view);}
+.tfil:hover:not(.active-all):not(.active-rest):not(.active-bar):not(.active-cafe):not(.active-view){background:var(--surface2);color:var(--text);}
 
 /* QUICK CHIPS */
 .chips-bar{
@@ -328,8 +331,9 @@ nav{
   padding:4px 10px;border-radius:var(--radius-pill);
 }
 .badge-rest{background:var(--tag-rest-bg);color:var(--tag-rest);}
+.badge-bar{background:var(--tag-bar-bg);color:var(--tag-bar);}
 .badge-cafe{background:var(--tag-cafe-bg);color:var(--tag-cafe);}
-.badge-both{background:var(--tag-both-bg);color:var(--tag-both);}
+.badge-view{background:var(--tag-view-bg);color:var(--tag-view);}
 .card-fav{
   position:absolute;top:10px;right:10px;
   width:32px;height:32px;border-radius:50%;
@@ -564,7 +568,9 @@ nav{
   </a>
   <div class="nav-links">
     <button class="nav-link" type="button" onclick="showTypePage('restaurant')">음식점</button>
+    <button class="nav-link" type="button" onclick="showTypePage('bar')">술집</button>
     <button class="nav-link" type="button" onclick="showTypePage('cafe')">카페</button>
+    <button class="nav-link" type="button" onclick="showTypePage('view')">관람</button>
     <button class="nav-link" type="button" onclick="showRegionPage()">지역별</button>
     <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
@@ -579,10 +585,12 @@ nav{
 <div class="hero">
   <div class="hero-badge">🐶 전국 애견동반 플레이스 모음</div>
   <h1>이제는 눈치보지 말고<br><span class="underline">당당하게 입장!</span></h1>
-  <p class="hero-sub">전국 애견동반 음식점과 카페를 한눈에.<br>지역별 · 조건별로 딱 맞는 곳을 찾아보세요.</p>
+  <p class="hero-sub">전국 애견동반 음식점, 술집, 카페, 관람 장소를 한눈에.<br>지역별 · 조건별로 딱 맞는 곳을 찾아보세요.</p>
   <div class="hero-actions">
     <button class="btn-hero-primary" onclick="showTypePage('restaurant')">음식점 찾기</button>
+    <button class="btn-hero-secondary" onclick="showTypePage('bar')">술집 찾기</button>
     <button class="btn-hero-secondary" onclick="showTypePage('cafe')">카페 찾기</button>
+    <button class="btn-hero-secondary" onclick="showTypePage('view')">관람 찾기</button>
   </div>
   <div class="hero-stats">
     <div class="stat-item"><div class="stat-num" id="totalCountBadge">0+</div><div class="stat-lbl">등록 장소</div></div>
@@ -673,8 +681,9 @@ nav{
             <label class="form-label" for="placeType">업종 *</label>
             <select class="form-select" id="placeType" required>
               <option value="restaurant">음식점</option>
+              <option value="bar">술집</option>
               <option value="cafe">카페</option>
-              <option value="both">복합</option>
+              <option value="view">관람</option>
             </select>
           </div>
 
@@ -786,8 +795,9 @@ const REGIONS=["전체","부산","서울/경기","강원","제주","경상","전
 const TYPES=[
   {id:"all",label:"전체",cls:"active-all"},
   {id:"restaurant",label:"🍽️ 음식점",cls:"active-rest"},
+  {id:"bar",label:"🍺 술집",cls:"active-bar"},
   {id:"cafe",label:"☕ 카페",cls:"active-cafe"},
-  {id:"both",label:"🍽️☕ 복합",cls:"active-both"}
+  {id:"view",label:"🎟️ 관람",cls:"active-view"}
 ];
 
 let curRegion="전체",curType="all",curTag="",searchQ="";
@@ -1232,7 +1242,7 @@ function initTabs(){
     b.className='tfil'+(t.id==='all'?' '+t.cls:'');
     b.textContent=t.label;b.dataset.type=t.id;b.dataset.cls=t.cls;
     b.onclick=()=>{
-      document.querySelectorAll('.tfil').forEach(x=>{x.classList.remove('active-all','active-rest','active-cafe','active-both');});
+      document.querySelectorAll('.tfil').forEach(x=>{x.classList.remove('active-all','active-rest','active-bar','active-cafe','active-view');});
       b.classList.add(t.cls);curType=t.id;renderCards();
     };
     tt.appendChild(b);
@@ -1252,7 +1262,10 @@ document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==
 function filtered(){
   return PLACES.filter(p=>{
     if(curRegion!=="전체"&&p.region!==curRegion)return false;
-    if(curType!=="all"&&p.type!==curType)return false;
+    if(curType!=="all"){
+      const placeType = p.type === 'both' ? 'view' : p.type;
+      if(placeType!==curType)return false;
+    }
     if(curTag&&!toArray(p.tags).includes(curTag))return false;
     if(searchQ&&!p.name.includes(searchQ)&&!p.address.includes(searchQ)&&!p.region.includes(searchQ))return false;
     return true;
@@ -1268,11 +1281,13 @@ function sorted(arr){
 }
 function typeLabel(t){
   if(t==='restaurant')return{txt:'음식점',cls:'badge-rest'};
+  if(t==='bar')return{txt:'술집',cls:'badge-bar'};
   if(t==='cafe')return{txt:'카페',cls:'badge-cafe'};
-  return{txt:'복합',cls:'badge-both'};
+  return{txt:'관람',cls:'badge-view'};
 }
 function bgColor(type){
   if(type==='restaurant')return '#FFF3E0';
+  if(type==='bar')return '#FCE7F3';
   if(type==='cafe')return '#E3F2FD';
   return '#E8F5E9';
 }
@@ -1503,7 +1518,7 @@ function scrollToList(){
   if(target) window.scrollTo({top: target.offsetTop - 70, behavior:'smooth'});
 }
 function setActiveTypeButton(type){
-  document.querySelectorAll('.tfil').forEach(x=>x.classList.remove('active-all','active-rest','active-cafe','active-both'));
+  document.querySelectorAll('.tfil').forEach(x=>x.classList.remove('active-all','active-rest','active-bar','active-cafe','active-view'));
   const btn = document.querySelector(`.tfil[data-type="${type}"]`);
   if(btn) btn.classList.add(btn.dataset.cls);
 }
