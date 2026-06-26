@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
-<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=7bbdeb625d2d252fbc7c11ca693aa8be&libraries=services&autoload=false"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -767,6 +766,8 @@ let curRegion="전체",curType="all",curTag="",searchQ="";
 let favs=new Set();
 let uploadedImageDataUrl = '';
 let currentDestination = null;
+const KAKAO_MAP_APP_KEY = '7bbdeb625d2d252fbc7c11ca693aa8be';
+let kakaoMapsReadyPromise = null;
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
@@ -1271,27 +1272,67 @@ function openNaverDirections(){
 }
 
 function waitForKakaoMaps(){
-  return new Promise((resolve, reject) => {
-    if(location.protocol === 'file:'){
-      reject(new Error('LOCAL_FILE'));
-      return;
-    }
+  if(location.protocol === 'file:'){
+    return Promise.reject(new Error('LOCAL_FILE'));
+  }
 
-    if(!window.kakao || !kakao.maps || !kakao.maps.load){
-      reject(new Error('Kakao Maps SDK is not available'));
-      return;
-    }
+  if(kakaoMapsReadyPromise) return kakaoMapsReadyPromise;
+
+  kakaoMapsReadyPromise = new Promise((resolve, reject) => {
+    let settled = false;
+    const fail = (error) => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+      kakaoMapsReadyPromise = null;
+      reject(error);
+    };
+    const finish = () => {
+      if(settled) return;
+      settled = true;
+      clearTimeout(timer);
+
+      if(!window.kakao || !kakao.maps || !kakao.maps.load){
+        kakaoMapsReadyPromise = null;
+        reject(new Error('Kakao Maps SDK is not available'));
+        return;
+      }
+
+      kakao.maps.load(() => {
+        if(kakao.maps.services) resolve();
+        else {
+          kakaoMapsReadyPromise = null;
+          reject(new Error('Kakao Maps services library is not available'));
+        }
+      });
+    };
 
     const timer = setTimeout(() => {
-      reject(new Error('KAKAO_MAPS_TIMEOUT'));
-    }, 7000);
+      fail(new Error('KAKAO_MAPS_TIMEOUT'));
+    }, 9000);
 
-    kakao.maps.load(() => {
-      clearTimeout(timer);
-      if(kakao.maps.services) resolve();
-      else reject(new Error('Kakao Maps services library is not available'));
-    });
+    if(window.kakao && kakao.maps && kakao.maps.load){
+      finish();
+      return;
+    }
+
+    let script = document.getElementById('kakaoMapsSdk');
+    if(!script){
+      script = document.createElement('script');
+      script.id = 'kakaoMapsSdk';
+      script.async = true;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(KAKAO_MAP_APP_KEY)}&libraries=services&autoload=false`;
+      script.addEventListener('load', finish, { once: true });
+      script.addEventListener('error', () => fail(new Error('KAKAO_MAPS_SCRIPT_ERROR')), { once: true });
+      document.head.appendChild(script);
+      return;
+    }
+
+    script.addEventListener('load', finish, { once: true });
+    script.addEventListener('error', () => fail(new Error('KAKAO_MAPS_SCRIPT_ERROR')), { once: true });
   });
+
+  return kakaoMapsReadyPromise;
 }
 
 function getKakaoMapErrorMessage(error){
@@ -1300,6 +1341,9 @@ function getKakaoMapErrorMessage(error){
   }
   if(error && error.message === 'KAKAO_MAPS_TIMEOUT'){
     return '카카오 지도 로딩이 지연됩니다. 도메인 등록과 네트워크를 확인해주세요.';
+  }
+  if(error && error.message === 'KAKAO_MAPS_SCRIPT_ERROR'){
+    return '카카오 지도 스크립트를 불러오지 못했습니다. 네트워크 차단 여부를 확인해주세요.';
   }
   return '카카오 지도 키/도메인 또는 네트워크를 확인해주세요.';
 }
