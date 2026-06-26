@@ -1223,64 +1223,6 @@ function renderHot(){
   `).join('');
 }
 
-function renderPlaceMap(place){
-  const mapEl = document.getElementById('placeMap');
-  if(!mapEl) return;
-
-  currentDestination = {
-    name: place.name || '도착지',
-    address: place.address || ''
-  };
-
-  if(!place.address){
-    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 정보가 없습니다</span></div>';
-    return;
-  }
-
-  if(!window.kakao || !kakao.maps || !kakao.maps.services){
-    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>카카오 지도 키를 설정해주세요</span></div>';
-    return;
-  }
-
-  const geocoder = new kakao.maps.services.Geocoder();
-  geocoder.addressSearch(place.address, function(result, status){
-    if(status !== kakao.maps.services.Status.OK || !result.length){
-      mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 위치를 찾지 못했습니다</span></div>';
-      return;
-    }
-
-    const lat = Number(result[0].y);
-    const lng = Number(result[0].x);
-    const coords = new kakao.maps.LatLng(lat, lng);
-
-    currentDestination = {
-      name: place.name || '도착지',
-      address: place.address || '',
-      lat,
-      lng
-    };
-
-    mapEl.innerHTML = '';
-    const map = new kakao.maps.Map(mapEl, {
-      center: coords,
-      level: 3
-    });
-
-    new kakao.maps.Marker({
-      map,
-      position: coords
-    });
-
-    // rAF 2중으로 감싸 Safari에서도 레이아웃 확정 후 resize 트리거
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        kakao.maps.event.trigger(map, 'resize');
-        map.setCenter(coords);
-      });
-    });
-  });
-}
-
 function getDirectionsAddress(address){
   const raw = String(address || '').trim().replace(/\s+/g, ' ');
   if(!raw) return '';
@@ -1330,16 +1272,36 @@ function openNaverDirections(){
 
 function waitForKakaoMaps(){
   return new Promise((resolve, reject) => {
+    if(location.protocol === 'file:'){
+      reject(new Error('LOCAL_FILE'));
+      return;
+    }
+
     if(!window.kakao || !kakao.maps || !kakao.maps.load){
       reject(new Error('Kakao Maps SDK is not available'));
       return;
     }
 
+    const timer = setTimeout(() => {
+      reject(new Error('KAKAO_MAPS_TIMEOUT'));
+    }, 7000);
+
     kakao.maps.load(() => {
+      clearTimeout(timer);
       if(kakao.maps.services) resolve();
       else reject(new Error('Kakao Maps services library is not available'));
     });
   });
+}
+
+function getKakaoMapErrorMessage(error){
+  if(error && error.message === 'LOCAL_FILE'){
+    return '카카오 지도는 파일을 직접 열면 표시되지 않습니다. GitHub Pages 주소에서 확인해주세요.';
+  }
+  if(error && error.message === 'KAKAO_MAPS_TIMEOUT'){
+    return '카카오 지도 로딩이 지연됩니다. 도메인 등록과 네트워크를 확인해주세요.';
+  }
+  return '카카오 지도 키/도메인 또는 네트워크를 확인해주세요.';
 }
 
 async function renderPlaceMap(place){
@@ -1363,13 +1325,14 @@ async function renderPlaceMap(place){
     await waitForKakaoMaps();
   } catch(error) {
     console.error('카카오 지도를 불러오지 못했습니다:', error);
-    mapEl.innerHTML = '<div class="map-placeholder-msg"><span>카카오 지도 키/도메인 또는 네트워크를 확인해주세요</span></div>';
+    mapEl.innerHTML = `<div class="map-placeholder-msg"><span>${getKakaoMapErrorMessage(error)}</span></div>`;
     return;
   }
 
   const geocoder = new kakao.maps.services.Geocoder();
   geocoder.addressSearch(mapSearchAddress, function(result, status){
     if(status !== kakao.maps.services.Status.OK || !result.length){
+      console.error('카카오 주소 검색 실패:', status, mapSearchAddress);
       mapEl.innerHTML = '<div class="map-placeholder-msg"><span>주소 위치를 찾지 못했습니다</span></div>';
       return;
     }
