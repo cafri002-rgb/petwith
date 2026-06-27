@@ -386,6 +386,18 @@ nav{
   border-radius:var(--radius-pill);padding:4px 9px;
   font-size:10px;font-weight:800;font-family:inherit;cursor:pointer;
 }
+.promo-request-bar{
+  position:fixed;left:0;right:0;bottom:90px;z-index:99;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--text);
+  border-top:1px solid rgba(255,255,255,0.15);
+  padding:7px 12px;
+  font-size:11px;font-weight:900;color:#fff;
+  text-align:center;cursor:pointer;
+  font-family:inherit;
+}
+.promo-request-bar span{color:var(--accent);}
+.promo-request-bar:hover{background:#2A2F3A;}
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
   background:rgba(255,255,255,0.97);
@@ -402,7 +414,7 @@ nav{
 }
 .bnav-item.active{color:var(--text);}
 .bnav-icon{font-size:20px;line-height:1;}
-.main-content{padding-bottom:110px;}
+.main-content{padding-bottom:145px;}
 
 /* MODAL */
 .modal-overlay{
@@ -871,6 +883,10 @@ nav{
   </div>
 </div>
 
+<button class="promo-request-bar" type="button" onclick="openPromotionModal()">
+  <span>홍보신청</span> PETWITH에 우리 업장 소개하기
+</button>
+
 <div class="copyright-bar">
   <span>COPYRIGHT© 2026 PETWITH All RIGHTS RESERVED.</span>
   <button class="copyright-admin" id="adminLoginBtn" type="button" onclick="openAdminLogin()">관리자 로그인</button>
@@ -893,6 +909,135 @@ nav{
   <button class="bnav-item" onclick="openMyModal()">
     <span class="bnav-icon">👤</span>MY
   </button>
+</div>
+
+<div class="modal-overlay" id="promotionOverlay" onclick="closePromotionModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-body">
+      <div class="modal-row" style="margin-bottom:18px;">
+        <div>
+          <div class="modal-name">홍보 신청서</div>
+          <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">PETWITH 상세 페이지에 들어갈 업장 정보를 작성해주세요.</p>
+        </div>
+        <button class="card-fav" style="position:static;" onclick="closePromotionModalDirect()">✕</button>
+      </div>
+
+      <form id="promotionForm" onsubmit="submitPromotionApplication(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="promoContactName">신청자명 *</label>
+            <input class="form-input" id="promoContactName" required placeholder="예: 홍길동">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="promoContactPhone">연락처 *</label>
+            <input class="form-input" id="promoContactPhone" required inputmode="tel" placeholder="예: 010-0000-0000">
+          </div>
+          <div class="form-group full">
+            <label class="form-label" for="promoContactEmail">이메일 *</label>
+            <input class="form-input" id="promoContactEmail" required type="email" placeholder="답변 받을 이메일">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="promoPlaceName">장소명 *</label>
+            <input class="form-input" id="promoPlaceName" required placeholder="예: 멍푸치노 카페">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="promoPlaceType">업종 *</label>
+            <select class="form-select" id="promoPlaceType" required>
+              <option value="음식점">음식점</option>
+              <option value="술집">술집</option>
+              <option value="카페">카페</option>
+              <option value="관람">관람</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="promoRegion">지역 *</label>
+            <select class="form-select" id="promoRegion" required>
+              <option>부산</option>
+              <option>서울/경기</option>
+              <option>강원</option>
+              <option>제주</option>
+              <option>경상</option>
+              <option>전라/충청</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">운영시간 *</label>
+            <div class="time-row">
+              <input class="form-input" id="promoOpenTime" required placeholder="오픈 예: 10:00">
+              <input class="form-input" id="promoCloseTime" required placeholder="마감 예: 21:00">
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label" for="promoAddress">주소 *</label>
+            <input class="form-input" id="promoAddress" required placeholder="도로명 주소와 상세주소를 입력해주세요.">
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label" for="promoDesc">장소 설명 *</label>
+            <textarea class="form-textarea" id="promoDesc" required placeholder="장소 분위기, 반려견 동반 이용 팁, 홍보하고 싶은 내용을 입력해주세요."></textarea>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">편의 선택</label>
+            <div class="check-grid">
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="야외테라스">야외테라스</label>
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="전용 좌석">전용 좌석</label>
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="물 제공">물 제공</label>
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="간식제공">간식제공</label>
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="마당있음">마당있음</label>
+              <label class="check-pill"><input type="checkbox" name="promoTags" value="전용주차">전용주차</label>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">정책 선택</label>
+            <div class="check-grid">
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="소형견 가능">소형견 가능</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="중형견 가능">중형견 가능</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="대형견 가능">대형견 가능</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="실내 동반 가능">실내 동반 가능</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="야외석만 가능">야외석만 가능</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="이동가방 필요">이동가방 필요</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="목줄 필수">목줄 필수</label>
+              <label class="check-pill"><input type="checkbox" name="promoDogPolicy" value="예약 필수">예약 필수</label>
+            </div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">대표 메뉴 5개 / 가격</label>
+            <div class="menu-row"><input class="form-input" id="promoMenuName1" placeholder="1번 대표 메뉴명"><input class="form-input" id="promoMenuPrice1" placeholder="가격"></div>
+            <div class="menu-row"><input class="form-input" id="promoMenuName2" placeholder="2번 대표 메뉴명"><input class="form-input" id="promoMenuPrice2" placeholder="가격"></div>
+            <div class="menu-row"><input class="form-input" id="promoMenuName3" placeholder="3번 대표 메뉴명"><input class="form-input" id="promoMenuPrice3" placeholder="가격"></div>
+            <div class="menu-row"><input class="form-input" id="promoMenuName4" placeholder="4번 대표 메뉴명"><input class="form-input" id="promoMenuPrice4" placeholder="가격"></div>
+            <div class="menu-row"><input class="form-input" id="promoMenuName5" placeholder="5번 대표 메뉴명"><input class="form-input" id="promoMenuPrice5" placeholder="가격"></div>
+          </div>
+
+          <div class="form-group full">
+            <label class="form-label">이미지 URL</label>
+            <input class="form-input" id="promoImage1" placeholder="이미지 링크 1">
+            <input class="form-input" id="promoImage2" style="margin-top:8px;" placeholder="이미지 링크 2">
+            <input class="form-input" id="promoImage3" style="margin-top:8px;" placeholder="이미지 링크 3">
+            <div class="form-help">사진 파일 첨부가 필요한 경우 메일 발송창에서 파일을 추가해주세요.</div>
+          </div>
+
+          <div class="form-group full">
+            <label class="check-pill" style="align-items:flex-start;border-radius:var(--radius-sm);">
+              <input type="checkbox" id="promoPrivacyAgree" required>
+              <span>개인정보 수집 및 이용에 동의합니다. 수집 항목은 신청자명, 연락처, 이메일, 업장 정보이며 홍보 신청 검토와 연락 목적으로만 사용됩니다.</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="cta-row">
+          <button type="button" class="cta-btn cta-secondary" onclick="closePromotionModalDirect()">취소</button>
+          <button type="submit" class="cta-btn cta-primary">제출하기 →</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay login-overlay" id="searchOverlay" onclick="closeSearchModal(event)">
@@ -1175,6 +1320,84 @@ function closeSignupModal(e){
 
 function closeSignupModalDirect(){
   document.getElementById('signupOverlay').classList.remove('open');
+}
+
+function openPromotionModal(){
+  document.getElementById('promotionForm').reset();
+  document.getElementById('promotionOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function closePromotionModal(e){
+  if(e.target===document.getElementById('promotionOverlay')) closePromotionModalDirect();
+}
+
+function closePromotionModalDirect(){
+  document.getElementById('promotionOverlay').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+function checkedValues(name){
+  return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value);
+}
+
+function collectPromotionMenus(){
+  return Array.from({length:5}, (_, index) => {
+    const num = index + 1;
+    const name = document.getElementById(`promoMenuName${num}`).value.trim();
+    const price = document.getElementById(`promoMenuPrice${num}`).value.trim();
+    return name || price ? `${num}. ${name || '-'} / ${price || '-'}` : '';
+  }).filter(Boolean);
+}
+
+function submitPromotionApplication(e){
+  e.preventDefault();
+
+  if(!document.getElementById('promoPrivacyAgree').checked){
+    alert('개인정보 수집 및 이용에 동의해주세요.');
+    return;
+  }
+
+  const menus = collectPromotionMenus();
+  const tags = checkedValues('promoTags');
+  const policies = checkedValues('promoDogPolicy');
+  const images = ['promoImage1','promoImage2','promoImage3']
+    .map(id => document.getElementById(id).value.trim())
+    .filter(Boolean);
+
+  const body = [
+    '[PETWITH 홍보 신청]',
+    '',
+    '신청자 정보',
+    `신청자명: ${document.getElementById('promoContactName').value.trim()}`,
+    `연락처: ${document.getElementById('promoContactPhone').value.trim()}`,
+    `이메일: ${document.getElementById('promoContactEmail').value.trim()}`,
+    '',
+    '업장 정보',
+    `장소명: ${document.getElementById('promoPlaceName').value.trim()}`,
+    `업종: ${document.getElementById('promoPlaceType').value}`,
+    `지역: ${document.getElementById('promoRegion').value}`,
+    `주소: ${document.getElementById('promoAddress').value.trim()}`,
+    `운영시간: ${document.getElementById('promoOpenTime').value.trim()} - ${document.getElementById('promoCloseTime').value.trim()}`,
+    '',
+    '장소 설명',
+    document.getElementById('promoDesc').value.trim(),
+    '',
+    `편의: ${tags.length ? tags.join(', ') : '선택 없음'}`,
+    `반려견 정책: ${policies.length ? policies.join(', ') : '선택 없음'}`,
+    '',
+    '대표 메뉴',
+    menus.length ? menus.join('\n') : '입력 없음',
+    '',
+    '이미지 URL',
+    images.length ? images.join('\n') : '입력 없음',
+    '',
+    '개인정보 수집 및 이용 동의: 동의'
+  ].join('\n');
+
+  const subject = `[PETWITH 홍보신청] ${document.getElementById('promoPlaceName').value.trim()}`;
+  window.location.href = `mailto:cafri002@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  alert('메일 작성창이 열리면 내용을 확인한 뒤 전송해주세요.');
 }
 
 function isValidSignupPassword(password){
