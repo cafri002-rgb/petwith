@@ -475,6 +475,15 @@ nav{
   flex-direction:column;gap:6px;font-size:12px;font-weight:600;pointer-events:none;
 }
 .cta-row{margin-top:1.5rem;display:flex;gap:8px;}
+.modal-edit-row{display:flex;justify-content:flex-start;margin-top:12px;}
+.modal-edit-btn{
+  border:1.5px solid var(--border-dark);
+  background:#fff;color:var(--text-muted);
+  border-radius:var(--radius-pill);
+  padding:7px 13px;font-size:12px;font-weight:800;
+  font-family:inherit;cursor:pointer;
+}
+.modal-edit-btn:hover{background:var(--surface2);color:var(--text);}
 .cta-btn{
   flex:1;padding:14px;border-radius:var(--radius-pill);
   font-size:14px;font-weight:700;cursor:pointer;
@@ -665,8 +674,8 @@ nav{
     <div class="modal-body">
       <div class="modal-row" style="margin-bottom:18px;">
         <div>
-          <div class="modal-name">장소 등록</div>
-          <p style="font-size:13px;color:var(--text-muted);margin-top:4px;">반려견 동반 가능한 맛집·카페 정보를 등록하세요.</p>
+          <div class="modal-name" id="placeFormTitle">장소 등록</div>
+          <p id="placeFormHelp" style="font-size:13px;color:var(--text-muted);margin-top:4px;">반려견 동반 가능한 플레이스 정보를 등록하세요.</p>
         </div>
         <button class="card-fav" style="position:static;" onclick="closeRegisterModalDirect()">✕</button>
       </div>
@@ -751,7 +760,7 @@ nav{
 
         <div class="cta-row">
           <button type="button" class="cta-btn cta-secondary" onclick="closeRegisterModalDirect()">취소</button>
-          <button type="submit" class="cta-btn cta-primary">등록하기 →</button>
+          <button type="submit" class="cta-btn cta-primary" id="placeSubmitBtn">등록하기 →</button>
         </div>
       </form>
     </div>
@@ -786,7 +795,7 @@ nav{
 <script>
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aXWVd3qdBlFKXC4rNgxXvqSGrXXDKj8_Q83aZ2M8pJm_n8yvzs2HsJ8x2iRwpSJRnnpRPSNFfnoc/pub?output=csv';
 
-const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbyr51i48Caog6zpk8Eg2LXLqrkEl7skzgvy3r_zbLFL0z37NYxYhnAKMrULIDXWeUIR/exec';;
+const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycby2I5eQk4gm5SmPR5rquVL3gDnEShqavs0lMEV3NtfMz-XgVPLpHcnM9gfanaM_XAlM/exec';;
 
 
 let PLACES = []; 
@@ -804,6 +813,7 @@ let curRegion="전체",curType="all",curTag="",searchQ="";
 let favs=new Set();
 let uploadedImageDataUrls = [];
 let currentDestination = null;
+let editingPlaceId = null;
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
@@ -975,17 +985,83 @@ function initRegisterForm(){
   `).join('');
 }
 
+function setPlaceFormMode(mode){
+  const isEdit = mode === 'edit';
+  document.getElementById('placeFormTitle').textContent = isEdit ? '장소 수정' : '장소 등록';
+  document.getElementById('placeFormHelp').textContent = isEdit ? '수정한 내용은 구글시트에도 반영됩니다.' : '반려견 동반 가능한 플레이스 정보를 등록하세요.';
+  document.getElementById('placeSubmitBtn').textContent = isEdit ? '수정 저장 →' : '등록하기 →';
+  document.getElementById('detailAddress').required = !isEdit;
+}
+
+function setCheckedValues(name, values){
+  const selected = new Set(toArray(values));
+  document.querySelectorAll(`input[name="${name}"]`).forEach(input => {
+    input.checked = selected.has(input.value);
+  });
+}
+
+function fillPlaceForm(place){
+  document.getElementById('placeName').value = place.name || '';
+  document.getElementById('placeType').value = place.type === 'both' ? 'view' : (place.type || 'restaurant');
+  document.getElementById('placeRegion').value = place.region || '부산';
+  document.getElementById('baseAddress').value = place.address || '';
+  document.getElementById('detailAddress').value = '';
+  document.getElementById('postcode').value = '-';
+  document.getElementById('placeDesc').value = place.desc || '';
+
+  const hours = String(place.hours || '').split(/\s*[-~]\s*/);
+  if(hours[0]) document.getElementById('openTime').value = hours[0];
+  if(hours[1]) document.getElementById('closeTime').value = hours[1];
+
+  setCheckedValues('tags', place.tags);
+  setCheckedValues('dogPolicy', String(place.dogPolicy || '').split(' · '));
+
+  toArray(place.menus).slice(0, 5).forEach((menu, index) => {
+    const nameEl = document.getElementById(`menuName${index + 1}`);
+    const priceEl = document.getElementById(`menuPrice${index + 1}`);
+    if(nameEl) nameEl.value = menu.name || '';
+    if(priceEl) priceEl.value = menu.price || '';
+  });
+
+  uploadedImageDataUrls = [];
+  const images = getPlaceImages(place);
+  const preview = document.getElementById('imagePreview');
+  if(images.length){
+    preview.style.display='grid';
+    preview.innerHTML = images.map((url, index) => `<img src="${escapeHtml(url)}" alt="기존 이미지 ${index + 1}">`).join('');
+  }
+}
+
 function openRegisterModal(){
+  editingPlaceId = null;
+  initRegisterForm();
+  setPlaceFormMode('create');
+  document.getElementById('placeForm').reset();
   initRegisterForm();
   document.getElementById('registerOverlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
+
+function openEditPlace(id){
+  const place = PLACES.find(p => p.id === id);
+  if(!place) return;
+  editingPlaceId = id;
+  initRegisterForm();
+  setPlaceFormMode('edit');
+  fillPlaceForm(place);
+  closeModalDirect();
+  document.getElementById('registerOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
 function closeRegisterModal(e){
   if(e.target===document.getElementById('registerOverlay')) closeRegisterModalDirect();
 }
 function closeRegisterModalDirect(){
   document.getElementById('registerOverlay').classList.remove('open');
   document.body.style.overflow='';
+  editingPlaceId = null;
+  setPlaceFormMode('create');
   uploadedImageDataUrls = [];
   const preview = document.getElementById('imagePreview');
   const input = document.getElementById('placeImage');
@@ -1128,25 +1204,31 @@ function submitPlace(e){
     };
   }).filter(m=>m.name || m.price);
 
+  const existingPlace = editingPlaceId ? PLACES.find(p => p.id === editingPlaceId) : null;
+  const imageUrlsForSave = uploadedImageDataUrls.length ? uploadedImageDataUrls : getPlaceImages(existingPlace || {});
+  const baseAddress = document.getElementById('baseAddress').value.trim();
+  const detailAddress = document.getElementById('detailAddress').value.trim();
+
   const newPlace = {
-    id: Date.now(),
+    id: editingPlaceId || Date.now(),
     name: document.getElementById('placeName').value.trim(),
     type: document.getElementById('placeType').value,
     region: document.getElementById('placeRegion').value,
-    address: `${document.getElementById('baseAddress').value.trim()} ${document.getElementById('detailAddress').value.trim()}`.trim(),
+    address: `${baseAddress} ${detailAddress}`.trim(),
     hours: openTime + ' - ' + closeTime,
     desc: document.getElementById('placeDesc').value.trim() || '새로 등록된 반려견 동반 장소입니다.',
     tags: selectedTags,
     dogPolicy: selectedPolicies.join(' · ') || '정책 확인 필요',
     menus,
     priceRange: menus[0] ? formatPrice(menus[0].price) : '',
-    imageUrl: uploadedImageDataUrls[0] || '',
-    imageUrls: uploadedImageDataUrls,
-    emoji: '🐾',
-    rating: 0,
-    reviewCount: 0,
-    reviews: [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}]
+    imageUrl: imageUrlsForSave[0] || '',
+    imageUrls: imageUrlsForSave,
+    emoji: existingPlace?.emoji || '🐾',
+    rating: existingPlace?.rating || 0,
+    reviewCount: existingPlace?.reviewCount || 0,
+    reviews: existingPlace?.reviews || [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}]
   };
+  const isEdit = Boolean(editingPlaceId);
 
   fetch(SHEET_WRITE_URL, {
   method: 'POST',
@@ -1154,10 +1236,14 @@ function submitPlace(e){
   headers: {
     'Content-Type': 'text/plain;charset=utf-8'
   },
-  body: JSON.stringify(newPlace)
+  body: JSON.stringify({ ...newPlace, action: isEdit ? 'update' : 'create' })
 });
 
-  PLACES.unshift(newPlace);
+  if(isEdit){
+    PLACES = PLACES.map(place => place.id === editingPlaceId ? newPlace : place);
+  }else{
+    PLACES.unshift(newPlace);
+  }
   uploadedImageDataUrls = [];
   e.target.reset();
   document.getElementById('imagePreview').style.display='none';
@@ -1500,6 +1586,9 @@ function openModal(id){
       <div class="modal-section">
         <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
         ${reviews}
+      </div>
+      <div class="modal-edit-row">
+        <button class="modal-edit-btn" type="button" onclick="openEditPlace(${p.id})">수정</button>
       </div>
       <div class="cta-row">
         <button class="cta-btn cta-secondary" onclick="closeModalDirect()">닫기</button>
