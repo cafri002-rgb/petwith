@@ -1622,7 +1622,7 @@ function submitPlace(e){
     emoji: existingPlace?.emoji || '🐾',
     rating: existingPlace?.rating || 0,
     reviewCount: existingPlace?.reviewCount || 0,
-    reviews: existingPlace?.reviews || [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}]
+    reviews: existingPlace?.reviews || []
   };
   const isEdit = Boolean(editingPlaceId);
 
@@ -1682,9 +1682,6 @@ PLACES = lines.slice(1).map(line => {
       obj.menus = toArray(obj.menus);
       obj.reviews = toArray(obj.reviews);
       obj.imageUrls = toArray(obj.imageUrls);
-      if(!obj.reviews.length){
-        obj.reviews = [{nick:'PETWITH', stars:'⭐⭐⭐⭐⭐', text:'새로 등록된 장소입니다. 첫 리뷰를 남겨보세요!'}];
-      }
       obj.address = obj.address || '';
       obj.dogPolicy = obj.dogPolicy || '정책 확인 필요';
       obj.baseRating = Number(obj.rating || 0);
@@ -1913,7 +1910,7 @@ async function refreshReviewStats(){
 }
 
 function renderReviewItems(reviews){
-  const items = toArray(reviews);
+  const items = toArray(reviews).filter(review => !isDefaultReviewPrompt(review));
   if(!items.length){
     return `<div class="empty" style="padding:2rem 1rem"><h3>아직 리뷰가 없어요</h3><p style="font-size:13px;margin-top:4px">첫 리뷰를 남겨보세요</p></div>`;
   }
@@ -1936,9 +1933,18 @@ function renderReviewItems(reviews){
   }).join('');
 }
 
+function isDefaultReviewPrompt(review){
+  const text = String(review && review.text || '');
+  return text.includes('첫 리뷰를 남겨보세요');
+}
+
+function renderReviewLoading(){
+  return `<div class="empty" style="padding:2rem 1rem"><p style="font-size:13px;">리뷰를 불러오는 중입니다...</p></div>`;
+}
+
 function uniqueReviews(reviews){
   const seen = new Set();
-  return toArray(reviews).filter(review => {
+  return toArray(reviews).filter(review => !isDefaultReviewPrompt(review)).filter(review => {
     const key = [
       review.userId || review.email || review.nick || '',
       review.text || '',
@@ -2247,7 +2253,7 @@ function openModal(id){
   const menus = toArray(p.menus).map(m=>`
   <div class="modal-menu-item"><strong>${escapeHtml(m.name || '')}</strong><span>${formatPrice(m.price || '')}</span></div>
 `).join('');
-  const reviews = renderReviewItems(p.reviews);
+  const reviews = Number(p.reviewCount || 0) > 0 ? renderReviewLoading() : renderReviewItems(p.reviews);
   const editButton = isAdmin() ? `
       <div class="modal-edit-row">
         <button class="modal-edit-btn" type="button" onclick="openEditPlace(${p.id})">수정</button>
