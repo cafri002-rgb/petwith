@@ -584,8 +584,9 @@ nav{
     <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="nav-link" style="cursor:pointer;">로그인</button>
-    <button class="nav-cta" onclick="openRegisterModal()">장소 등록 →</button>
+    <button class="nav-link" id="adminLoginBtn" type="button" onclick="openAdminLogin()" style="cursor:pointer;">관리자 로그인</button>
+    <button class="nav-link" id="adminLogoutBtn" type="button" onclick="adminLogout()" style="cursor:pointer;display:none;">로그아웃</button>
+    <button class="nav-cta" id="registerPlaceBtn" onclick="openRegisterModal()" style="display:none;">장소 등록 →</button>
   </div>
 </nav>
 
@@ -795,7 +796,7 @@ nav{
 <script>
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aXWVd3qdBlFKXC4rNgxXvqSGrXXDKj8_Q83aZ2M8pJm_n8yvzs2HsJ8x2iRwpSJRnnpRPSNFfnoc/pub?output=csv';
 
-const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycby2I5eQk4gm5SmPR5rquVL3gDnEShqavs0lMEV3NtfMz-XgVPLpHcnM9gfanaM_XAlM/exec';;
+const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbwpxYq_ZB9gKGkyVXx25P-U2QUn9OiM0Fr-PAqoJtVt1o4bZdQfCkJfOVQhve1MipHS/exec';;
 
 
 let PLACES = []; 
@@ -814,6 +815,7 @@ let favs=new Set();
 let uploadedImageDataUrls = [];
 let currentDestination = null;
 let editingPlaceId = null;
+const ADMIN_TOKEN_KEY = 'petwithAdminToken';
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
@@ -826,6 +828,61 @@ const TIME_OPTIONS = Array.from({length:48}, (_,i) => {
 function escapeHtml(value=''){
   return String(value).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
+
+function getAdminToken(){
+  return localStorage.getItem(ADMIN_TOKEN_KEY) || '';
+}
+
+function isAdmin(){
+  return Boolean(getAdminToken());
+}
+
+function updateAdminControls(){
+  const admin = isAdmin();
+  const loginBtn = document.getElementById('adminLoginBtn');
+  const logoutBtn = document.getElementById('adminLogoutBtn');
+  const registerBtn = document.getElementById('registerPlaceBtn');
+  if(loginBtn) loginBtn.style.display = admin ? 'none' : '';
+  if(logoutBtn) logoutBtn.style.display = admin ? '' : 'none';
+  if(registerBtn) registerBtn.style.display = admin ? '' : 'none';
+}
+
+function openAdminLogin(){
+  const pin = prompt('관리자 비밀번호를 입력하세요.');
+  if(!pin) return;
+
+  const callbackName = 'petwithAdminLoginCallback_' + Date.now();
+  window[callbackName] = function(result){
+    delete window[callbackName];
+    const script = document.getElementById(callbackName);
+    if(script) script.remove();
+
+    if(result && result.ok && result.token){
+      localStorage.setItem(ADMIN_TOKEN_KEY, result.token);
+      updateAdminControls();
+      alert('관리자로 로그인되었습니다.');
+      return;
+    }
+
+    alert((result && result.error) || '관리자 로그인에 실패했습니다.');
+  };
+
+  const script = document.createElement('script');
+  script.id = callbackName;
+  script.src = SHEET_WRITE_URL + '?action=login&pin=' + encodeURIComponent(pin) + '&callback=' + encodeURIComponent(callbackName);
+  script.onerror = function(){
+    delete window[callbackName];
+    script.remove();
+    alert('관리자 로그인 요청을 처리하지 못했습니다.');
+  };
+  document.body.appendChild(script);
+}
+
+function adminLogout(){
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
+  updateAdminControls();
+}
+
 function formatPrice(value){
   const n = Number(String(value).replace(/[^0-9]/g,''));
   return n ? n.toLocaleString('ko-KR') + '원' : escapeHtml(value);
@@ -1033,6 +1090,10 @@ function fillPlaceForm(place){
 }
 
 function openRegisterModal(){
+  if(!isAdmin()){
+    alert('관리자 로그인 후 장소를 등록할 수 있습니다.');
+    return;
+  }
   editingPlaceId = null;
   initRegisterForm();
   setPlaceFormMode('create');
@@ -1043,6 +1104,10 @@ function openRegisterModal(){
 }
 
 function openEditPlace(id){
+  if(!isAdmin()){
+    alert('관리자 로그인 후 장소를 수정할 수 있습니다.');
+    return;
+  }
   const place = PLACES.find(p => p.id === id);
   if(!place) return;
   editingPlaceId = id;
@@ -1184,6 +1249,12 @@ async function handleImageUpload(e){
 
 function submitPlace(e){
   e.preventDefault();
+  const adminToken = getAdminToken();
+  if(!adminToken){
+    alert('관리자 로그인 후 저장할 수 있습니다.');
+    return;
+  }
+
   const openTime = document.getElementById('openTime').value;
   const closeTime = document.getElementById('closeTime').value;
 
@@ -1236,7 +1307,7 @@ function submitPlace(e){
   headers: {
     'Content-Type': 'text/plain;charset=utf-8'
   },
-  body: JSON.stringify({ ...newPlace, action: isEdit ? 'update' : 'create' })
+  body: JSON.stringify({ ...newPlace, action: isEdit ? 'update' : 'create', adminToken })
 });
 
   if(isEdit){
@@ -1560,6 +1631,11 @@ function openModal(id){
       <div class="review-text">${r.text || '리뷰 내용이 없습니다.'}</div>
     </div>
   `).join('');
+  const editButton = isAdmin() ? `
+      <div class="modal-edit-row">
+        <button class="modal-edit-btn" type="button" onclick="openEditPlace(${p.id})">수정</button>
+      </div>
+  ` : '';
   document.getElementById('modalContent').innerHTML=`
     ${renderPlaceImageSlider(p)}
     <div class="modal-body">
@@ -1587,9 +1663,7 @@ function openModal(id){
         <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
         ${reviews}
       </div>
-      <div class="modal-edit-row">
-        <button class="modal-edit-btn" type="button" onclick="openEditPlace(${p.id})">수정</button>
-      </div>
+      ${editButton}
       <div class="cta-row">
         <button class="cta-btn cta-secondary" onclick="closeModalDirect()">닫기</button>
         <button class="cta-btn cta-primary" onclick="openNaverDirections()">길찾기 →</button>
@@ -1652,6 +1726,7 @@ function showAll(){
   scrollToList();
 }
 
+updateAdminControls();
 fetchSheetsData();
 </script>
 </body>
