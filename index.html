@@ -499,6 +499,16 @@ nav{
 .review-nick{font-size:13px;font-weight:700;color:var(--text);}
 .review-stars{font-size:12px;margin-left:auto;letter-spacing:1px;}
 .review-text{font-size:13px;color:var(--text-muted);line-height:1.65;}
+.review-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
+.review-head h4{margin-bottom:0;}
+.review-write-btn,.my-small-btn{
+  border:1.5px solid var(--border-dark);
+  background:#fff;color:var(--text-muted);
+  border-radius:var(--radius-pill);
+  padding:7px 12px;font-size:12px;font-weight:800;
+  font-family:inherit;cursor:pointer;white-space:nowrap;
+}
+.review-write-btn:hover,.my-small-btn:hover{background:var(--surface2);color:var(--text);}
 .map-placeholder{
   background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
   height:200px;position:relative;
@@ -583,6 +593,36 @@ nav{
 .modal-menu-item{display:flex;justify-content:space-between;gap:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:13px;}
 .modal-menu-item strong{color:var(--text);}
 .modal-menu-item span{color:var(--text-muted);font-weight:700;white-space:nowrap;}
+.my-profile{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:12px;margin-bottom:14px;
+}
+.my-email{font-size:14px;font-weight:800;color:var(--text);word-break:break-all;}
+.my-caption{font-size:11px;color:var(--text-light);font-weight:700;margin-bottom:3px;}
+.fav-list{display:flex;flex-direction:column;gap:8px;}
+.fav-item{
+  display:flex;align-items:center;gap:10px;width:100%;
+  border:1px solid var(--border);background:#fff;
+  border-radius:var(--radius-sm);padding:9px;text-align:left;
+  font-family:inherit;cursor:pointer;
+}
+.fav-thumb{
+  width:54px;height:54px;border-radius:10px;overflow:hidden;flex-shrink:0;
+  background:var(--surface2);display:flex;align-items:center;justify-content:center;
+  font-size:24px;
+}
+.fav-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.fav-meta{min-width:0;}
+.fav-name{font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fav-address{font-size:11px;color:var(--text-muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.star-select{display:flex;gap:6px;margin:8px 0 12px;}
+.star-btn{
+  flex:1;border:1.5px solid var(--border-dark);background:#fff;
+  border-radius:var(--radius-sm);padding:9px 0;font-size:13px;font-weight:800;
+  font-family:inherit;cursor:pointer;color:var(--text-muted);
+}
+.star-btn.active{background:var(--accent);border-color:var(--accent-dark);color:var(--text);}
 
 @media(max-width:600px){
   .modal-img{height:220px;}
@@ -816,13 +856,13 @@ nav{
   <button class="bnav-item" onclick="scrollToList()">
     <span class="bnav-icon">🔍</span>검색
   </button>
-  <button class="bnav-item" onclick="showFavoritesPage()">
+  <button class="bnav-item" onclick="openFavoritesModal()">
     <span class="bnav-icon">❤️</span>찜
   </button>
   <button class="bnav-item">
     <span class="bnav-icon">📖</span>리뷰
   </button>
-  <button class="bnav-item" onclick="showFavoritesPage()">
+  <button class="bnav-item" onclick="openMyModal()">
     <span class="bnav-icon">👤</span>MY
   </button>
 </div>
@@ -835,6 +875,32 @@ nav{
       <button class="login-btn login-google" type="button" onclick="loginWithGoogle()">구글 로그인</button>
       <button class="login-btn login-email" type="button" onclick="loginWithEmail()">이메일 로그인</button>
       <button class="login-btn login-cancel" type="button" onclick="closeUserLoginDirect()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="myOverlay" onclick="closeMyModal(event)">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div class="modal-body" id="myModalContent"></div>
+  </div>
+</div>
+
+<div class="modal-overlay login-overlay" id="reviewOverlay" onclick="closeReviewModal(event)">
+  <div class="login-dialog" onclick="event.stopPropagation()">
+    <h3>리뷰작성</h3>
+    <p id="reviewPlaceName">방문 경험을 남겨주세요.</p>
+    <div class="star-select" id="reviewStars">
+      <button class="star-btn" type="button" onclick="setReviewStars(1)">1</button>
+      <button class="star-btn" type="button" onclick="setReviewStars(2)">2</button>
+      <button class="star-btn" type="button" onclick="setReviewStars(3)">3</button>
+      <button class="star-btn" type="button" onclick="setReviewStars(4)">4</button>
+      <button class="star-btn active" type="button" onclick="setReviewStars(5)">5</button>
+    </div>
+    <textarea class="form-textarea" id="reviewText" placeholder="반려견 동반 이용 경험을 적어주세요."></textarea>
+    <div class="login-actions" style="margin-top:12px;">
+      <button class="login-btn login-google" type="button" onclick="submitReview()">리뷰 저장</button>
+      <button class="login-btn login-cancel" type="button" onclick="closeReviewModalDirect()">닫기</button>
     </div>
   </div>
 </div>
@@ -883,6 +949,8 @@ let currentView = 'all';
 let uploadedImageDataUrls = [];
 let currentDestination = null;
 let editingPlaceId = null;
+let currentReviewPlaceId = null;
+let currentReviewStars = 5;
 const ADMIN_TOKEN_KEY = 'petwithAdminToken';
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
@@ -1007,6 +1075,95 @@ async function loginWithEmail(){
 
 function userLogout(){
   auth.signOut();
+}
+
+function getFavoritePlaces(){
+  return PLACES.filter(place => favs.has(place.id));
+}
+
+function renderFavoriteList(){
+  const places = getFavoritePlaces();
+  if(!places.length){
+    return `<div class="empty" style="padding:2.5rem 1rem"><div class="empty-icon">❤️</div><h3>찜한 장소가 없어요</h3><p style="font-size:13px;margin-top:4px">마음에 드는 장소의 하트를 눌러보세요</p></div>`;
+  }
+
+  return `<div class="fav-list">${places.map(place => {
+    const image = getPlaceImages(place)[0];
+    const thumb = image
+      ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(place.name)} 이미지" referrerpolicy="no-referrer">`
+      : `<span>${place.emoji || '🐾'}</span>`;
+    return `
+      <button class="fav-item" type="button" onclick="openFavoritePlace(${place.id})">
+        <div class="fav-thumb">${thumb}</div>
+        <div class="fav-meta">
+          <div class="fav-name">${escapeHtml(place.name)}</div>
+          <div class="fav-address">${escapeHtml(place.address || '주소 확인 필요')}</div>
+        </div>
+      </button>
+    `;
+  }).join('')}</div>`;
+}
+
+function openMyModal(){
+  if(!currentUser){
+    alert('MY 메뉴는 로그인 후 볼 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  setActiveBottom(4);
+  document.getElementById('myModalContent').innerHTML = `
+    <div class="modal-row" style="margin-bottom:14px;">
+      <div class="modal-name">MY</div>
+      <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+    </div>
+    <div class="my-profile">
+      <div>
+        <div class="my-caption">로그인 계정</div>
+        <div class="my-email">${escapeHtml(currentUser.email || '이메일 정보 없음')}</div>
+      </div>
+      <button class="my-small-btn" type="button" onclick="userLogout();closeMyModalDirect();">로그아웃</button>
+    </div>
+    <div class="modal-section">
+      <h4>찜 목록 ${getFavoritePlaces().length}개</h4>
+      ${renderFavoriteList()}
+    </div>
+  `;
+  document.getElementById('myOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function openFavoritesModal(){
+  if(!currentUser){
+    alert('찜 목록은 로그인 후 볼 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  setActiveBottom(2);
+  document.getElementById('myModalContent').innerHTML = `
+    <div class="modal-row" style="margin-bottom:14px;">
+      <div class="modal-name">찜 목록</div>
+      <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+    </div>
+    ${renderFavoriteList()}
+  `;
+  document.getElementById('myOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function openFavoritePlace(id){
+  closeMyModalDirect();
+  openModal(id);
+}
+
+function closeMyModal(e){
+  if(e.target===document.getElementById('myOverlay')) closeMyModalDirect();
+}
+
+function closeMyModalDirect(){
+  document.getElementById('myOverlay').classList.remove('open');
+  document.body.style.overflow='';
 }
 
 async function loadUserFavorites(){
@@ -1634,9 +1791,141 @@ async function toggleFav(id,btn){
     }
 
     if(currentView === 'favorites') renderCards();
+    if(document.getElementById('myOverlay').classList.contains('open')){
+      document.getElementById('myModalContent').innerHTML = `
+        <div class="modal-row" style="margin-bottom:14px;">
+          <div class="modal-name">찜 목록</div>
+          <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+        </div>
+        ${renderFavoriteList()}
+      `;
+    }
   } catch(error) {
     console.error('찜 저장 실패:', error);
     alert('찜 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
+}
+
+function starsText(count){
+  const n = Math.max(1, Math.min(5, Number(count) || 5));
+  return '⭐'.repeat(n);
+}
+
+function renderReviewItems(reviews){
+  const items = toArray(reviews);
+  if(!items.length){
+    return `<div class="empty" style="padding:2rem 1rem"><h3>아직 리뷰가 없어요</h3><p style="font-size:13px;margin-top:4px">첫 리뷰를 남겨보세요</p></div>`;
+  }
+
+  return items.map(r=>`
+    <div class="review-item">
+      <div class="review-top">
+        <div class="review-avatar">${escapeHtml((r.nick || r.email || '익명')[0] || '🐾')}</div>
+        <span class="review-nick">${escapeHtml(r.nick || r.email || '익명')}</span>
+        <span class="review-stars">${escapeHtml(r.stars || starsText(r.starCount))}</span>
+      </div>
+      <div class="review-text">${escapeHtml(r.text || '리뷰 내용이 없습니다.')}</div>
+    </div>
+  `).join('');
+}
+
+async function loadPlaceReviews(placeId){
+  const place = PLACES.find(p => p.id === placeId);
+  if(!place || !db) return;
+
+  try {
+    const snapshot = await db.collection('reviews').where('placeId', '==', placeId).get();
+    const savedReviews = [];
+    snapshot.forEach(doc => savedReviews.push(doc.data()));
+    savedReviews.sort((a, b) => {
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
+    });
+
+    const allReviews = [...savedReviews, ...toArray(place.reviews)];
+    const list = document.getElementById('modalReviewList');
+    const count = document.getElementById('modalReviewCount');
+    if(list) list.innerHTML = renderReviewItems(allReviews);
+    if(count) count.textContent = `리뷰 ${Math.max(place.reviewCount || 0, allReviews.length).toLocaleString()}개`;
+  } catch(error) {
+    console.error('리뷰 로드 실패:', error);
+  }
+}
+
+function openReviewModal(placeId){
+  if(!currentUser){
+    alert('리뷰 작성은 로그인 후 사용할 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  const place = PLACES.find(p => p.id === placeId);
+  if(!place) return;
+
+  currentReviewPlaceId = placeId;
+  currentReviewStars = 5;
+  document.getElementById('reviewPlaceName').textContent = place.name;
+  document.getElementById('reviewText').value = '';
+  setReviewStars(5);
+  document.getElementById('reviewOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+
+function setReviewStars(count){
+  currentReviewStars = count;
+  document.querySelectorAll('#reviewStars .star-btn').forEach((btn, index) => {
+    btn.classList.toggle('active', index + 1 === count);
+  });
+}
+
+function closeReviewModal(e){
+  if(e.target===document.getElementById('reviewOverlay')) closeReviewModalDirect();
+}
+
+function closeReviewModalDirect(){
+  document.getElementById('reviewOverlay').classList.remove('open');
+  currentReviewPlaceId = null;
+}
+
+async function submitReview(){
+  if(!currentUser || !currentReviewPlaceId){
+    openUserLogin();
+    return;
+  }
+
+  const text = document.getElementById('reviewText').value.trim();
+  if(!text){
+    alert('리뷰 내용을 입력해주세요.');
+    return;
+  }
+
+  const place = PLACES.find(p => p.id === currentReviewPlaceId);
+  if(!place) return;
+
+  const review = {
+    userId: currentUser.uid,
+    email: currentUser.email || '익명',
+    nick: currentUser.email || '익명',
+    placeId: currentReviewPlaceId,
+    placeName: place.name || '',
+    starCount: currentReviewStars,
+    stars: starsText(currentReviewStars),
+    text,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  try {
+    await db.collection('reviews').add(review);
+    place.reviews = [review, ...toArray(place.reviews)];
+    place.reviewCount = Number(place.reviewCount || 0) + 1;
+    closeReviewModalDirect();
+    await loadPlaceReviews(place.id);
+    renderCards();
+    alert('리뷰가 저장되었습니다.');
+  } catch(error) {
+    console.error('리뷰 저장 실패:', error);
+    alert('리뷰 저장에 실패했습니다. Firestore 보안규칙을 확인해주세요.');
   }
 }
 
@@ -1810,16 +2099,7 @@ function openModal(id){
   const menus = toArray(p.menus).map(m=>`
   <div class="modal-menu-item"><strong>${escapeHtml(m.name || '')}</strong><span>${formatPrice(m.price || '')}</span></div>
 `).join('');
-  const reviews=toArray(p.reviews).map(r=>`
-    <div class="review-item">
-      <div class="review-top">
-        <div class="review-avatar">${r.nick ? r.nick[0] : '🐾'}</div>
-        <span class="review-nick">${r.nick || '익명'}</span>
-        <span class="review-stars">${r.stars || '⭐⭐⭐⭐⭐'}</span>
-      </div>
-      <div class="review-text">${r.text || '리뷰 내용이 없습니다.'}</div>
-    </div>
-  `).join('');
+  const reviews = renderReviewItems(p.reviews);
   const editButton = isAdmin() ? `
       <div class="modal-edit-row">
         <button class="modal-edit-btn" type="button" onclick="openEditPlace(${p.id})">수정</button>
@@ -1849,8 +2129,11 @@ function openModal(id){
         <div class="map-placeholder" id="placeMap"><div class="map-placeholder-msg"><span>지도를 불러오는 중입니다...</span></div></div>
       </div>
       <div class="modal-section">
-        <h4>리뷰 ${p.reviewCount.toLocaleString()}개</h4>
-        ${reviews}
+        <div class="review-head">
+          <h4 id="modalReviewCount">리뷰 ${p.reviewCount.toLocaleString()}개</h4>
+          <button class="review-write-btn" type="button" onclick="openReviewModal(${p.id})">리뷰작성</button>
+        </div>
+        <div id="modalReviewList">${reviews}</div>
       </div>
       ${editButton}
       <div class="cta-row">
@@ -1862,6 +2145,7 @@ function openModal(id){
   document.getElementById('modalOverlay').classList.add('open');
 document.body.style.overflow='hidden';
 setTimeout(() => renderPlaceMap(p), 120);
+loadPlaceReviews(p.id);
 }
 function closeModal(e){if(e.target===document.getElementById('modalOverlay'))closeModalDirect();}
 function closeModalDirect(){document.getElementById('modalOverlay').classList.remove('open');document.body.style.overflow='';}
