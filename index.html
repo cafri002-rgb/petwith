@@ -389,15 +389,15 @@ nav{
 .promo-request-bar{
   position:fixed;left:0;right:0;bottom:90px;z-index:99;
   display:flex;align-items:center;justify-content:center;gap:8px;
-  background:var(--text);
-  border-top:1px solid rgba(255,255,255,0.15);
-  padding:7px 12px;
-  font-size:11px;font-weight:900;color:#fff;
+  background:var(--accent);
+  border-top:1px solid var(--accent-dark);
+  padding:10px 12px;
+  font-size:12px;font-weight:900;color:var(--text);
   text-align:center;cursor:pointer;
   font-family:inherit;
 }
-.promo-request-bar span{color:var(--accent);}
-.promo-request-bar:hover{background:#2A2F3A;}
+.promo-request-bar span{color:var(--text);}
+.promo-request-bar:hover{background:var(--accent-hover);}
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
   background:rgba(255,255,255,0.97);
@@ -414,7 +414,7 @@ nav{
 }
 .bnav-item.active{color:var(--text);}
 .bnav-icon{font-size:20px;line-height:1;}
-.main-content{padding-bottom:145px;}
+.main-content{padding-bottom:155px;}
 
 /* MODAL */
 .modal-overlay{
@@ -884,7 +884,7 @@ nav{
 </div>
 
 <button class="promo-request-bar" type="button" onclick="openPromotionModal()">
-  <span>홍보신청</span> PETWITH에 우리 업장 소개하기
+  <span>우리 가게 홍보 신청 하기</span>
 </button>
 
 <div class="copyright-bar">
