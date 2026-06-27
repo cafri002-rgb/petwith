@@ -1122,7 +1122,7 @@ nav{
 <script>
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aXWVd3qdBlFKXC4rNgxXvqSGrXXDKj8_Q83aZ2M8pJm_n8yvzs2HsJ8x2iRwpSJRnnpRPSNFfnoc/pub?output=csv';
 
-const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbwpxYq_ZB9gKGkyVXx25P-U2QUn9OiM0Fr-PAqoJtVt1o4bZdQfCkJfOVQhve1MipHS/exec';;
+const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbxDG1l_6eVvIyQv8MTtOgUM7Y14W58G8fLl_hNHSefl9X05WYMrrBuzBAMmg1Mo-h2d/exec';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD3H3ASVvKemn-Vsax3rabiUNBCV-Ot82A",
@@ -1365,39 +1365,33 @@ function submitPromotionApplication(e){
     .map(id => document.getElementById(id).value.trim())
     .filter(Boolean);
 
-  const body = [
-    '[PETWITH 홍보 신청]',
-    '',
-    '신청자 정보',
-    `신청자명: ${document.getElementById('promoContactName').value.trim()}`,
-    `연락처: ${document.getElementById('promoContactPhone').value.trim()}`,
-    `이메일: ${document.getElementById('promoContactEmail').value.trim()}`,
-    '',
-    '업장 정보',
-    `장소명: ${document.getElementById('promoPlaceName').value.trim()}`,
-    `업종: ${document.getElementById('promoPlaceType').value}`,
-    `지역: ${document.getElementById('promoRegion').value}`,
-    `주소: ${document.getElementById('promoAddress').value.trim()}`,
-    `운영시간: ${document.getElementById('promoOpenTime').value.trim()} - ${document.getElementById('promoCloseTime').value.trim()}`,
-    '',
-    '장소 설명',
-    document.getElementById('promoDesc').value.trim(),
-    '',
-    `편의: ${tags.length ? tags.join(', ') : '선택 없음'}`,
-    `반려견 정책: ${policies.length ? policies.join(', ') : '선택 없음'}`,
-    '',
-    '대표 메뉴',
-    menus.length ? menus.join('\n') : '입력 없음',
-    '',
-    '이미지 URL',
-    images.length ? images.join('\n') : '입력 없음',
-    '',
-    '개인정보 수집 및 이용 동의: 동의'
-  ].join('\n');
+  fetch(SHEET_WRITE_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({
+      action: 'promotion',
+      contactName: document.getElementById('promoContactName').value.trim(),
+      contactPhone: document.getElementById('promoContactPhone').value.trim(),
+      contactEmail: document.getElementById('promoContactEmail').value.trim(),
+      placeName: document.getElementById('promoPlaceName').value.trim(),
+      placeType: document.getElementById('promoPlaceType').value,
+      region: document.getElementById('promoRegion').value,
+      address: document.getElementById('promoAddress').value.trim(),
+      hours: `${document.getElementById('promoOpenTime').value.trim()} - ${document.getElementById('promoCloseTime').value.trim()}`,
+      desc: document.getElementById('promoDesc').value.trim(),
+      tags,
+      dogPolicy: policies,
+      menus,
+      imageUrls: images,
+      privacyAgree: true
+    })
+  });
 
-  const subject = `[PETWITH 홍보신청] ${document.getElementById('promoPlaceName').value.trim()}`;
-  window.location.href = `mailto:cafri002@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  alert('메일 작성창이 열리면 내용을 확인한 뒤 전송해주세요.');
+  closePromotionModalDirect();
+  alert('홍보 신청이 접수되었습니다. 확인 후 연락드릴게요.');
 }
 
 function isValidSignupPassword(password){
