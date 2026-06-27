@@ -914,8 +914,9 @@ nav{
     <p>이메일 인증 후 PETWITH를 이용할 수 있습니다.</p>
     <div class="signup-fields">
       <input class="form-input" id="signupEmail" type="email" autocomplete="email" placeholder="이메일">
-      <input class="form-input" id="signupPassword" type="password" autocomplete="new-password" placeholder="비밀번호" oninput="validateSignupPasswordMatch()">
-      <input class="form-input" id="signupPasswordConfirm" type="password" autocomplete="new-password" placeholder="비밀번호 재확인" oninput="validateSignupPasswordMatch()">
+      <input class="form-input" id="signupPassword" type="password" autocomplete="new-password" placeholder="비밀번호" oninput="validateSignupPasswordFields()">
+      <div class="signup-error" id="signupPasswordRuleError">대문자, 특수문자, 숫자를 포함한 6자리 이상을 입력해 주세요.</div>
+      <input class="form-input" id="signupPasswordConfirm" type="password" autocomplete="new-password" placeholder="비밀번호 재확인" oninput="validateSignupPasswordFields()">
       <div class="signup-error" id="signupPasswordMatchError">비밀번호가 일치하지 않습니다.</div>
       <div class="signup-help">대문자, 특수문자, 숫자를 포함한 6자리 이상을 입력해 주세요.</div>
     </div>
@@ -1150,7 +1151,7 @@ function openSignupModal(){
   document.getElementById('signupEmail').value = '';
   document.getElementById('signupPassword').value = '';
   document.getElementById('signupPasswordConfirm').value = '';
-  validateSignupPasswordMatch();
+  validateSignupPasswordFields();
   document.getElementById('signupOverlay').classList.add('open');
 }
 
@@ -1178,6 +1179,20 @@ function validateSignupPasswordMatch(){
   return !isMismatch;
 }
 
+function validateSignupPasswordRule(){
+  const password = document.getElementById('signupPassword').value;
+  const error = document.getElementById('signupPasswordRuleError');
+  const isInvalid = Boolean(password && !isValidSignupPassword(password));
+  error.classList.toggle('show', isInvalid);
+  return !isInvalid;
+}
+
+function validateSignupPasswordFields(){
+  const isRuleValid = validateSignupPasswordRule();
+  const isMatchValid = validateSignupPasswordMatch();
+  return isRuleValid && isMatchValid;
+}
+
 async function submitSignupWithEmail(){
   try {
     const email = document.getElementById('signupEmail').value.trim();
@@ -1185,7 +1200,7 @@ async function submitSignupWithEmail(){
     const password = document.getElementById('signupPassword').value;
     const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
     if(!password) return;
-    if(!validateSignupPasswordMatch()){
+    if(!validateSignupPasswordFields()){
       return;
     }
     if(!isValidSignupPassword(password)){
