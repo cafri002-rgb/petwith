@@ -360,6 +360,20 @@ nav{
 .price-range{font-size:12px;color:var(--text-muted);font-weight:600;}
 
 /* BOTTOM NAV */
+.copyright-bar{
+  position:fixed;left:0;right:0;bottom:58px;z-index:99;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  background:rgba(255,255,255,0.96);
+  border-top:1px solid var(--border);
+  padding:7px 12px;
+  font-size:10px;font-weight:700;color:var(--text-light);
+  text-align:center;
+}
+.copyright-admin{
+  border:1px solid var(--border-dark);background:#fff;color:var(--text-muted);
+  border-radius:var(--radius-pill);padding:4px 9px;
+  font-size:10px;font-weight:800;font-family:inherit;cursor:pointer;
+}
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
   background:rgba(255,255,255,0.97);
@@ -376,7 +390,7 @@ nav{
 }
 .bnav-item.active{color:var(--text);}
 .bnav-icon{font-size:20px;line-height:1;}
-.main-content{padding-bottom:72px;}
+.main-content{padding-bottom:110px;}
 
 /* MODAL */
 .modal-overlay{
@@ -386,6 +400,24 @@ nav{
   backdrop-filter:blur(2px);
 }
 .modal-overlay.open{display:flex;}
+.login-overlay{align-items:center;justify-content:center;padding:18px;}
+.login-dialog{
+  background:#fff;width:min(360px,100%);
+  border-radius:var(--radius);
+  padding:20px;
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+}
+.login-dialog h3{font-size:18px;font-weight:900;margin-bottom:6px;color:var(--text);}
+.login-dialog p{font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:16px;}
+.login-actions{display:flex;flex-direction:column;gap:8px;}
+.login-btn{
+  border:none;border-radius:var(--radius-pill);
+  padding:12px 14px;font-size:14px;font-weight:800;
+  font-family:inherit;cursor:pointer;
+}
+.login-google{background:var(--text);color:#fff;}
+.login-email{background:var(--accent);color:var(--text);}
+.login-cancel{background:var(--surface2);color:var(--text-muted);}
 .modal-sheet{
   background:#fff;
   width:100%;max-height:88vh;
@@ -587,10 +619,8 @@ nav{
     <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="nav-link" id="userLoginBtn" type="button" onclick="openUserLogin()" style="cursor:pointer;">사용자 로그인</button>
-    <button class="nav-link" id="userLogoutBtn" type="button" onclick="userLogout()" style="cursor:pointer;display:none;">사용자 로그아웃</button>
-    <button class="nav-link" id="adminLoginBtn" type="button" onclick="openAdminLogin()" style="cursor:pointer;">관리자 로그인</button>
-    <button class="nav-link" id="adminLogoutBtn" type="button" onclick="adminLogout()" style="cursor:pointer;display:none;">로그아웃</button>
+    <button class="nav-link" id="userLoginBtn" type="button" onclick="openUserLogin()" style="cursor:pointer;">로그인</button>
+    <button class="nav-link" id="userLogoutBtn" type="button" onclick="userLogout()" style="cursor:pointer;display:none;">로그아웃</button>
     <button class="nav-cta" id="registerPlaceBtn" onclick="openRegisterModal()" style="display:none;">장소 등록 →</button>
   </div>
 </nav>
@@ -773,6 +803,12 @@ nav{
   </div>
 </div>
 
+<div class="copyright-bar">
+  <span>COPYRIGHT© 2026 PETWITH All RIGHTS RESERVED.</span>
+  <button class="copyright-admin" id="adminLoginBtn" type="button" onclick="openAdminLogin()">관리자 로그인</button>
+  <button class="copyright-admin" id="adminLogoutBtn" type="button" onclick="adminLogout()" style="display:none;">관리자 로그아웃</button>
+</div>
+
 <div class="bottom-nav">
   <button class="bnav-item active" onclick="showAll()">
     <span class="bnav-icon">🏠</span>홈
@@ -789,6 +825,18 @@ nav{
   <button class="bnav-item" onclick="showFavoritesPage()">
     <span class="bnav-icon">👤</span>MY
   </button>
+</div>
+
+<div class="modal-overlay login-overlay" id="userLoginOverlay" onclick="closeUserLogin(event)">
+  <div class="login-dialog" onclick="event.stopPropagation()">
+    <h3>로그인</h3>
+    <p>찜하기와 MY 메뉴를 사용하려면 로그인이 필요합니다.</p>
+    <div class="login-actions">
+      <button class="login-btn login-google" type="button" onclick="loginWithGoogle()">구글 로그인</button>
+      <button class="login-btn login-email" type="button" onclick="loginWithEmail()">이메일 로그인</button>
+      <button class="login-btn login-cancel" type="button" onclick="closeUserLoginDirect()">닫기</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
@@ -911,16 +959,31 @@ function updateUserControls(){
   if(logoutBtn) logoutBtn.style.display = loggedIn ? '' : 'none';
 }
 
-async function openUserLogin(){
-  const useGoogle = confirm('구글 계정으로 로그인할까요?\n취소를 누르면 이메일/비밀번호 로그인을 진행합니다.');
+function openUserLogin(){
+  document.getElementById('userLoginOverlay').classList.add('open');
+}
 
+function closeUserLogin(e){
+  if(e.target===document.getElementById('userLoginOverlay')) closeUserLoginDirect();
+}
+
+function closeUserLoginDirect(){
+  document.getElementById('userLoginOverlay').classList.remove('open');
+}
+
+async function loginWithGoogle(){
   try {
-    if(useGoogle){
-      const provider = new firebase.auth.GoogleAuthProvider();
-      await auth.signInWithPopup(provider);
-      return;
-    }
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await auth.signInWithPopup(provider);
+    closeUserLoginDirect();
+  } catch(error) {
+    console.error('구글 로그인 실패:', error);
+    alert('구글 로그인에 실패했습니다. Firebase 인증 설정과 승인된 도메인을 확인해주세요.');
+  }
+}
 
+async function loginWithEmail(){
+  try {
     const email = prompt('이메일을 입력하세요.');
     if(!email) return;
     const password = prompt('비밀번호를 입력하세요.');
@@ -935,9 +998,10 @@ async function openUserLogin(){
         throw error;
       }
     }
+    closeUserLoginDirect();
   } catch(error) {
-    console.error('사용자 로그인 실패:', error);
-    alert('로그인에 실패했습니다. Firebase 인증 설정과 승인된 도메인을 확인해주세요.');
+    console.error('이메일 로그인 실패:', error);
+    alert('이메일 로그인에 실패했습니다.');
   }
 }
 
