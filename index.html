@@ -8,6 +8,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 <script src="https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=hi1yno1pzq&submodules=geocoder"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.4/firebase-firestore-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 :root{
@@ -584,6 +587,8 @@ nav{
     <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
+    <button class="nav-link" id="userLoginBtn" type="button" onclick="openUserLogin()" style="cursor:pointer;">사용자 로그인</button>
+    <button class="nav-link" id="userLogoutBtn" type="button" onclick="userLogout()" style="cursor:pointer;display:none;">사용자 로그아웃</button>
     <button class="nav-link" id="adminLoginBtn" type="button" onclick="openAdminLogin()" style="cursor:pointer;">관리자 로그인</button>
     <button class="nav-link" id="adminLogoutBtn" type="button" onclick="adminLogout()" style="cursor:pointer;display:none;">로그아웃</button>
     <button class="nav-cta" id="registerPlaceBtn" onclick="openRegisterModal()" style="display:none;">장소 등록 →</button>
@@ -769,19 +774,19 @@ nav{
 </div>
 
 <div class="bottom-nav">
-  <button class="bnav-item active">
+  <button class="bnav-item active" onclick="showAll()">
     <span class="bnav-icon">🏠</span>홈
   </button>
-  <button class="bnav-item">
+  <button class="bnav-item" onclick="scrollToList()">
     <span class="bnav-icon">🔍</span>검색
   </button>
-  <button class="bnav-item">
+  <button class="bnav-item" onclick="showFavoritesPage()">
     <span class="bnav-icon">❤️</span>찜
   </button>
   <button class="bnav-item">
     <span class="bnav-icon">📖</span>리뷰
   </button>
-  <button class="bnav-item">
+  <button class="bnav-item" onclick="showFavoritesPage()">
     <span class="bnav-icon">👤</span>MY
   </button>
 </div>
@@ -798,6 +803,19 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aXWVd3qdBl
 
 const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbwpxYq_ZB9gKGkyVXx25P-U2QUn9OiM0Fr-PAqoJtVt1o4bZdQfCkJfOVQhve1MipHS/exec';;
 
+const firebaseConfig = {
+  apiKey: "AIzaSyD3H3ASVvKemn-Vsax3rabiUNBCV-Ot82A",
+  authDomain: "petwith-86459.firebaseapp.com",
+  projectId: "petwith-86459",
+  storageBucket: "petwith-86459.firebasestorage.app",
+  messagingSenderId: "1028049737018",
+  appId: "1:1028049737018:web:d80ec37e96964fcf646c03",
+  measurementId: "G-HLGYJLLVC2"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
 
 let PLACES = []; 
 
@@ -812,6 +830,8 @@ const TYPES=[
 
 let curRegion="전체",curType="all",curTag="",searchQ="";
 let favs=new Set();
+let currentUser = null;
+let currentView = 'all';
 let uploadedImageDataUrls = [];
 let currentDestination = null;
 let editingPlaceId = null;
@@ -881,6 +901,71 @@ function openAdminLogin(){
 function adminLogout(){
   localStorage.removeItem(ADMIN_TOKEN_KEY);
   updateAdminControls();
+}
+
+function updateUserControls(){
+  const loggedIn = Boolean(currentUser);
+  const loginBtn = document.getElementById('userLoginBtn');
+  const logoutBtn = document.getElementById('userLogoutBtn');
+  if(loginBtn) loginBtn.style.display = loggedIn ? 'none' : '';
+  if(logoutBtn) logoutBtn.style.display = loggedIn ? '' : 'none';
+}
+
+async function openUserLogin(){
+  const useGoogle = confirm('구글 계정으로 로그인할까요?\n취소를 누르면 이메일/비밀번호 로그인을 진행합니다.');
+
+  try {
+    if(useGoogle){
+      const provider = new firebase.auth.GoogleAuthProvider();
+      await auth.signInWithPopup(provider);
+      return;
+    }
+
+    const email = prompt('이메일을 입력하세요.');
+    if(!email) return;
+    const password = prompt('비밀번호를 입력하세요.');
+    if(!password) return;
+
+    try {
+      await auth.signInWithEmailAndPassword(email, password);
+    } catch(error) {
+      if(confirm('로그인에 실패했습니다. 이 이메일로 새 계정을 만들까요?')){
+        await auth.createUserWithEmailAndPassword(email, password);
+      } else {
+        throw error;
+      }
+    }
+  } catch(error) {
+    console.error('사용자 로그인 실패:', error);
+    alert('로그인에 실패했습니다. Firebase 인증 설정과 승인된 도메인을 확인해주세요.');
+  }
+}
+
+function userLogout(){
+  auth.signOut();
+}
+
+async function loadUserFavorites(){
+  favs = new Set();
+  if(!currentUser){
+    renderCards();
+    return;
+  }
+
+  try {
+    const snapshot = await db.collection('favorites').where('userId', '==', currentUser.uid).get();
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      if(data.placeId !== undefined && data.placeId !== null) favs.add(Number(data.placeId));
+    });
+    renderCards();
+  } catch(error) {
+    console.error('찜 목록 로드 실패:', error);
+  }
+}
+
+function favoriteDocId(placeId){
+  return `${currentUser.uid}_${placeId}`;
 }
 
 function formatPrice(value){
@@ -1386,6 +1471,7 @@ function initTabs(){
     b.className='rtab'+(r==="전체"?' active':'');
     b.textContent=r;
     b.onclick=()=>{
+      currentView = 'all';
       document.querySelectorAll('.rtab').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');curRegion=r;renderCards();
     };
@@ -1399,6 +1485,7 @@ function initTabs(){
     b.className='tfil'+(t.id==='all'?' '+t.cls:'');
     b.textContent=t.label;b.dataset.type=t.id;b.dataset.cls=t.cls;
     b.onclick=()=>{
+      currentView = 'all';
       document.querySelectorAll('.tfil').forEach(x=>{x.classList.remove('active-all','active-rest','active-bar','active-cafe','active-view');});
       b.classList.add(t.cls);curType=t.id;renderCards();
     };
@@ -1407,17 +1494,20 @@ function initTabs(){
 }
 
 function setChip(el,tag){
+  currentView = 'all';
   document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');curTag=tag;renderCards();
 }
 
 function doSearch(){
+  currentView = 'all';
   searchQ=document.getElementById('searchInput').value.trim();renderCards();
 }
 document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 
 function filtered(){
   return PLACES.filter(p=>{
+    if(currentView === 'favorites' && !favs.has(p.id))return false;
     if(curRegion!=="전체"&&p.region!==curRegion)return false;
     if(curType!=="all"){
       const placeType = p.type === 'both' ? 'view' : p.type;
@@ -1448,9 +1538,42 @@ function bgColor(type){
   if(type==='cafe')return '#E3F2FD';
   return '#E8F5E9';
 }
-function toggleFav(id,btn){
-  if(favs.has(id)){favs.delete(id);btn.textContent='🤍';}
-  else{favs.add(id);btn.textContent='❤️';}
+async function toggleFav(id,btn){
+  if(!currentUser){
+    alert('찜하기는 로그인 후 사용할 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  const place = PLACES.find(p => p.id === id);
+  if(!place) return;
+
+  const docRef = db.collection('favorites').doc(favoriteDocId(id));
+
+  try {
+    if(favs.has(id)){
+      await docRef.delete();
+      favs.delete(id);
+      btn.textContent='🤍';
+    } else {
+      await docRef.set({
+        userId: currentUser.uid,
+        placeId: id,
+        placeName: place.name || '',
+        placeType: place.type || '',
+        region: place.region || '',
+        address: place.address || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      favs.add(id);
+      btn.textContent='❤️';
+    }
+
+    if(currentView === 'favorites') renderCards();
+  } catch(error) {
+    console.error('찜 저장 실패:', error);
+    alert('찜 저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
 }
 
 function renderCards(){
@@ -1458,7 +1581,9 @@ function renderCards(){
   document.getElementById('countNum').textContent=data.length;
   const grid=document.getElementById('cardsGrid');
   if(!data.length){
-    grid.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>조건에 맞는 장소가 없어요</h3><p style="font-size:13px;margin-top:4px">필터를 조정해보세요</p></div>`;
+    grid.innerHTML=currentView === 'favorites'
+      ? `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">❤️</div><h3>찜한 장소가 없어요</h3><p style="font-size:13px;margin-top:4px">마음에 드는 장소의 하트를 눌러보세요</p></div>`
+      : `<div class="empty" style="grid-column:1/-1"><div class="empty-icon">🔍</div><h3>조건에 맞는 장소가 없어요</h3><p style="font-size:13px;margin-top:4px">필터를 조정해보세요</p></div>`;
     return;
   }
   grid.innerHTML=data.map(p=>{
@@ -1692,7 +1817,11 @@ function resetQuickChips(){
   curTag = '';
   document.querySelectorAll('.chip').forEach((chip, index)=>chip.classList.toggle('active', index === 0));
 }
+function setActiveBottom(index){
+  document.querySelectorAll('.bnav-item').forEach((item, i)=>item.classList.toggle('active', i === index));
+}
 function showTypePage(type){
+  currentView = 'all';
   curRegion = '전체';
   curType = type;
   searchQ = '';
@@ -1704,6 +1833,7 @@ function showTypePage(type){
   scrollToList();
 }
 function showRegionPage(){
+  currentView = 'all';
   curRegion = '전체';
   curType = 'all';
   searchQ = '';
@@ -1715,6 +1845,7 @@ function showRegionPage(){
   scrollToList();
 }
 function showAll(){
+  currentView = 'all';
   curRegion = '전체';
   curType = 'all';
   searchQ = '';
@@ -1722,11 +1853,39 @@ function showAll(){
   resetQuickChips();
   setActiveRegionButton('전체');
   setActiveTypeButton('all');
+  setActiveBottom(0);
   renderCards();
   scrollToList();
 }
 
+function showFavoritesPage(){
+  if(!currentUser){
+    alert('찜 목록은 로그인 후 볼 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  currentView = 'favorites';
+  curRegion = '전체';
+  curType = 'all';
+  searchQ = '';
+  document.getElementById('searchInput').value = '';
+  resetQuickChips();
+  setActiveRegionButton('전체');
+  setActiveTypeButton('all');
+  setActiveBottom(2);
+  renderCards();
+  scrollToList();
+}
+
+auth.onAuthStateChanged(async user => {
+  currentUser = user;
+  updateUserControls();
+  await loadUserFavorites();
+});
+
 updateAdminControls();
+updateUserControls();
 fetchSheetsData();
 </script>
 </body>
