@@ -422,6 +422,8 @@ nav{
 .login-dialog h3{font-size:18px;font-weight:900;margin-bottom:6px;color:var(--text);}
 .login-dialog p{font-size:13px;color:var(--text-muted);line-height:1.55;margin-bottom:16px;}
 .login-actions{display:flex;flex-direction:column;gap:8px;}
+.signup-fields{display:flex;flex-direction:column;gap:9px;margin:14px 0 12px;}
+.signup-help{font-size:11px;color:var(--text-light);line-height:1.5;margin-top:-2px;}
 .login-btn{
   border:none;border-radius:var(--radius-pill);
   padding:12px 14px;font-size:14px;font-weight:800;
@@ -898,8 +900,25 @@ nav{
     <div class="login-actions">
       <button class="login-btn login-google" type="button" onclick="loginWithGoogle()">구글 로그인</button>
       <button class="login-btn login-email" type="button" onclick="loginWithEmail()">이메일 로그인</button>
-      <button class="login-btn login-signup" type="button" onclick="signupWithEmail()">회원가입</button>
+      <button class="login-btn login-signup" type="button" onclick="openSignupModal()">회원가입</button>
       <button class="login-btn login-cancel" type="button" onclick="closeUserLoginDirect()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay login-overlay" id="signupOverlay" onclick="closeSignupModal(event)">
+  <div class="login-dialog" onclick="event.stopPropagation()">
+    <h3>회원가입</h3>
+    <p>이메일 인증 후 PETWITH를 이용할 수 있습니다.</p>
+    <div class="signup-fields">
+      <input class="form-input" id="signupEmail" type="email" autocomplete="email" placeholder="이메일">
+      <input class="form-input" id="signupPassword" type="password" autocomplete="new-password" placeholder="비밀번호">
+      <input class="form-input" id="signupPasswordConfirm" type="password" autocomplete="new-password" placeholder="비밀번호 재확인">
+      <div class="signup-help">대문자, 특수문자, 숫자를 포함한 6자리 이상을 입력해 주세요.</div>
+    </div>
+    <div class="login-actions">
+      <button class="login-btn login-email" type="button" onclick="submitSignupWithEmail()">가입하기</button>
+      <button class="login-btn login-cancel" type="button" onclick="closeSignupModalDirect()">닫기</button>
     </div>
   </div>
 </div>
@@ -1123,18 +1142,51 @@ async function loginWithEmail(){
   }
 }
 
-async function signupWithEmail(){
+function openSignupModal(){
+  closeUserLoginDirect();
+  document.getElementById('signupEmail').value = '';
+  document.getElementById('signupPassword').value = '';
+  document.getElementById('signupPasswordConfirm').value = '';
+  document.getElementById('signupOverlay').classList.add('open');
+}
+
+function closeSignupModal(e){
+  if(e.target===document.getElementById('signupOverlay')) closeSignupModalDirect();
+}
+
+function closeSignupModalDirect(){
+  document.getElementById('signupOverlay').classList.remove('open');
+}
+
+function isValidSignupPassword(password){
+  return password.length >= 6
+    && /[A-Z]/.test(password)
+    && /[0-9]/.test(password)
+    && /[^A-Za-z0-9]/.test(password);
+}
+
+async function submitSignupWithEmail(){
   try {
-    const email = prompt('회원가입할 이메일을 입력하세요.');
+    const email = document.getElementById('signupEmail').value.trim();
     if(!email) return;
-    const password = prompt('사용할 비밀번호를 입력하세요. 6자 이상으로 입력해주세요.');
+    const password = document.getElementById('signupPassword').value;
+    const passwordConfirm = document.getElementById('signupPasswordConfirm').value;
     if(!password) return;
+    if(password !== passwordConfirm){
+      alert('비밀번호가 서로 일치하지 않습니다.');
+      return;
+    }
+    if(!isValidSignupPassword(password)){
+      alert('비밀번호는 대문자, 특수문자, 숫자를 포함한 6자리 이상으로 입력해 주세요.');
+      return;
+    }
 
     const credential = await auth.createUserWithEmailAndPassword(email, password);
     await sendVerificationAndSignOut(
       credential.user,
       '가입 확인 메일을 보냈습니다. 메일함에서 인증을 완료한 뒤 이메일 로그인으로 다시 로그인해주세요.'
     );
+    closeSignupModalDirect();
   } catch(error) {
     console.error('회원가입 실패:', error);
     if(error && error.code === 'auth/email-already-in-use'){
@@ -1142,7 +1194,7 @@ async function signupWithEmail(){
       return;
     }
     if(error && error.code === 'auth/weak-password'){
-      alert('비밀번호는 6자 이상으로 입력해주세요.');
+      alert('비밀번호는 대문자, 특수문자, 숫자를 포함한 6자리 이상으로 입력해 주세요.');
       return;
     }
     alert('회원가입에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
