@@ -963,6 +963,7 @@ let currentDestination = null;
 let editingPlaceId = null;
 let currentReviewPlaceId = null;
 let currentReviewStars = 5;
+let isReviewSubmitting = false;
 const ADMIN_TOKEN_KEY = 'petwithAdminToken';
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
@@ -1841,6 +1842,20 @@ function renderReviewItems(reviews){
   `).join('');
 }
 
+function uniqueReviews(reviews){
+  const seen = new Set();
+  return toArray(reviews).filter(review => {
+    const key = [
+      review.userId || review.email || review.nick || '',
+      review.text || '',
+      review.starCount || review.stars || ''
+    ].join('|');
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 async function loadPlaceReviews(placeId){
   const place = PLACES.find(p => p.id === placeId);
   if(!place || !db) return;
@@ -1855,7 +1870,7 @@ async function loadPlaceReviews(placeId){
       return bt - at;
     });
 
-    const allReviews = [...savedReviews, ...toArray(place.reviews)];
+    const allReviews = uniqueReviews([...savedReviews, ...toArray(place.reviews)]);
     const list = document.getElementById('modalReviewList');
     const count = document.getElementById('modalReviewCount');
     if(list) list.innerHTML = renderReviewItems(allReviews);
@@ -1901,6 +1916,8 @@ function closeReviewModalDirect(){
 }
 
 async function submitReview(){
+  if(isReviewSubmitting) return;
+
   if(!currentUser || !currentReviewPlaceId){
     openUserLogin();
     return;
@@ -1928,8 +1945,8 @@ async function submitReview(){
   };
 
   try {
+    isReviewSubmitting = true;
     await db.collection('reviews').add(review);
-    place.reviews = [review, ...toArray(place.reviews)];
     place.reviewCount = Number(place.reviewCount || 0) + 1;
     closeReviewModalDirect();
     await loadPlaceReviews(place.id);
@@ -1938,6 +1955,8 @@ async function submitReview(){
   } catch(error) {
     console.error('리뷰 저장 실패:', error);
     alert('리뷰 저장에 실패했습니다. Firestore 보안규칙을 확인해주세요.');
+  } finally {
+    isReviewSubmitting = false;
   }
 }
 
