@@ -511,6 +511,12 @@ nav{
 .review-nick{font-size:13px;font-weight:700;color:var(--text);}
 .review-stars{font-size:12px;margin-left:auto;letter-spacing:1px;}
 .review-text{font-size:13px;color:var(--text-muted);line-height:1.65;}
+.review-delete{
+  border:none;background:var(--surface2);color:var(--text-muted);
+  border-radius:var(--radius-pill);padding:5px 9px;
+  font-size:11px;font-weight:800;font-family:inherit;cursor:pointer;
+}
+.review-delete:hover{background:var(--text);color:#fff;}
 .review-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}
 .review-head h4{margin-bottom:0;}
 .review-write-btn,.my-small-btn{
@@ -1845,6 +1851,21 @@ function updateHeroStats(){
   if(avgEl) avgEl.textContent = `${average.toFixed(1)}★`;
 }
 
+function maskEmail(email){
+  const raw = String(email || '').trim();
+  if(!raw || !raw.includes('@')) return raw || '익명';
+
+  const [name, domain] = raw.split('@');
+  const visible = name.slice(0, Math.min(3, name.length));
+  return `${visible}**@${domain}`;
+}
+
+function reviewDisplayName(review){
+  const rawName = review.email || review.nick || '익명';
+  const isMine = Boolean(currentUser && review.userId === currentUser.uid);
+  return isMine ? rawName : maskEmail(rawName);
+}
+
 function applyReviewStats(reviewDocs){
   const grouped = new Map();
   toArray(reviewDocs).forEach(review => {
@@ -1897,16 +1918,22 @@ function renderReviewItems(reviews){
     return `<div class="empty" style="padding:2rem 1rem"><h3>아직 리뷰가 없어요</h3><p style="font-size:13px;margin-top:4px">첫 리뷰를 남겨보세요</p></div>`;
   }
 
-  return items.map(r=>`
-    <div class="review-item">
-      <div class="review-top">
-        <div class="review-avatar">${escapeHtml((r.nick || r.email || '익명')[0] || '🐾')}</div>
-        <span class="review-nick">${escapeHtml(r.nick || r.email || '익명')}</span>
-        <span class="review-stars">${escapeHtml(r.stars || starsText(r.starCount))}</span>
+  return items.map(r=>{
+    const displayName = reviewDisplayName(r);
+    const isMine = Boolean(currentUser && r.userId === currentUser.uid && r.id);
+    const deleteButton = isMine ? `<button class="review-delete" type="button" onclick="deleteReview('${escapeHtml(r.id)}', ${Number(r.placeId || 0)})">삭제</button>` : '';
+    return `
+      <div class="review-item">
+        <div class="review-top">
+          <div class="review-avatar">${escapeHtml(displayName[0] || '🐾')}</div>
+          <span class="review-nick">${escapeHtml(displayName)}</span>
+          <span class="review-stars">${escapeHtml(r.stars || starsText(r.starCount))}</span>
+          ${deleteButton}
+        </div>
+        <div class="review-text">${escapeHtml(r.text || '리뷰 내용이 없습니다.')}</div>
       </div>
-      <div class="review-text">${escapeHtml(r.text || '리뷰 내용이 없습니다.')}</div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function uniqueReviews(reviews){
@@ -1930,7 +1957,7 @@ async function loadPlaceReviews(placeId){
   try {
     const snapshot = await db.collection('reviews').where('placeId', '==', placeId).get();
     const savedReviews = [];
-    snapshot.forEach(doc => savedReviews.push(doc.data()));
+    snapshot.forEach(doc => savedReviews.push({ id: doc.id, ...doc.data() }));
     savedReviews.sort((a, b) => {
       const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
       const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
@@ -1982,6 +2009,26 @@ function closeReviewModal(e){
 function closeReviewModalDirect(){
   document.getElementById('reviewOverlay').classList.remove('open');
   currentReviewPlaceId = null;
+}
+
+async function deleteReview(reviewId, placeId){
+  if(!currentUser || !reviewId){
+    openUserLogin();
+    return;
+  }
+
+  if(!confirm('이 리뷰를 삭제할까요?')) return;
+
+  try {
+    await db.collection('reviews').doc(reviewId).delete();
+    await refreshReviewStats();
+    await loadPlaceReviews(placeId);
+    renderHot();
+    renderCards();
+  } catch(error) {
+    console.error('리뷰 삭제 실패:', error);
+    alert('리뷰 삭제에 실패했습니다. Firestore 보안규칙을 확인해주세요.');
+  }
 }
 
 async function submitReview(){
