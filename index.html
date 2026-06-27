@@ -454,7 +454,7 @@ nav{
   margin:12px auto 0;
 }
 .modal-img{
-  width:100%;height:clamp(220px,38vh,360px);
+  width:100%;height:clamp(280px,46vh,460px);
   display:flex;align-items:center;justify-content:center;
   font-size:72px;
   margin-top:8px;
@@ -653,8 +653,8 @@ nav{
 .star-btn.active{background:var(--accent);border-color:var(--accent-dark);color:var(--text);}
 
 @media(max-width:600px){
-  .modal-img{height:220px;}
-  .modal-img .place-photo{object-fit:cover;}
+  .modal-img{height:300px;}
+  .modal-img .place-photo{object-fit:contain;}
   .cards-grid{grid-template-columns:1fr;}
   .form-grid{grid-template-columns:1fr;}
   .menu-row{grid-template-columns:1fr 110px;}
