@@ -72,6 +72,18 @@ nav{
   transition:background 0.15s,color 0.15s;text-decoration:none;
 }
 .nav-link:hover{background:var(--surface2);color:var(--text);}
+.nav-auth{
+  border:1.5px solid var(--text);
+  background:#fff;color:var(--text);
+  padding:8px 17px;
+  font-weight:800;
+  box-shadow:0 3px 0 rgba(0,0,0,0.08);
+}
+.nav-auth:hover{
+  background:var(--accent);
+  color:var(--text);
+  border-color:var(--accent-dark);
+}
 .nav-cta{
   background:var(--text);color:#fff;
   padding:8px 18px;border-radius:var(--radius-pill);
@@ -659,8 +671,8 @@ nav{
     <button class="nav-link" type="button" onclick="scrollToList()">리뷰</button>
   </div>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button class="nav-link" id="userLoginBtn" type="button" onclick="openUserLogin()" style="cursor:pointer;">로그인</button>
-    <button class="nav-link" id="userLogoutBtn" type="button" onclick="userLogout()" style="cursor:pointer;display:none;">로그아웃</button>
+    <button class="nav-link nav-auth" id="userLoginBtn" type="button" onclick="openUserLogin()" style="cursor:pointer;">로그인</button>
+    <button class="nav-link nav-auth" id="userLogoutBtn" type="button" onclick="userLogout()" style="cursor:pointer;display:none;">로그아웃</button>
     <button class="nav-cta" id="registerPlaceBtn" onclick="openRegisterModal()" style="display:none;">장소 등록 →</button>
   </div>
 </nav>
