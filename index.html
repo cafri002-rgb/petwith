@@ -881,18 +881,32 @@ nav{
   <button class="bnav-item active" onclick="showAll()">
     <span class="bnav-icon">🏠</span>홈
   </button>
-  <button class="bnav-item" onclick="scrollToList()">
+  <button class="bnav-item" onclick="openSearchModal()">
     <span class="bnav-icon">🔍</span>검색
   </button>
   <button class="bnav-item" onclick="openFavoritesModal()">
     <span class="bnav-icon">❤️</span>찜
   </button>
-  <button class="bnav-item">
+  <button class="bnav-item" onclick="openMyReviewsModal()">
     <span class="bnav-icon">📖</span>리뷰
   </button>
   <button class="bnav-item" onclick="openMyModal()">
     <span class="bnav-icon">👤</span>MY
   </button>
+</div>
+
+<div class="modal-overlay login-overlay" id="searchOverlay" onclick="closeSearchModal(event)">
+  <div class="login-dialog" onclick="event.stopPropagation()">
+    <h3>검색</h3>
+    <p>지역, 업체명, 업종, 메뉴명으로 검색할 수 있습니다.</p>
+    <div class="signup-fields">
+      <input class="form-input" id="modalSearchInput" type="text" placeholder="예: 파스타, 부산, 카페">
+    </div>
+    <div class="login-actions">
+      <button class="login-btn login-email" type="button" onclick="doModalSearch()">검색하기</button>
+      <button class="login-btn login-cancel" type="button" onclick="closeSearchModalDirect()">닫기</button>
+    </div>
+  </div>
 </div>
 
 <div class="modal-overlay login-overlay" id="userLoginOverlay" onclick="closeUserLogin(event)">
@@ -1305,6 +1319,78 @@ function openFavoritesModal(){
   `;
   document.getElementById('myOverlay').classList.add('open');
   document.body.style.overflow='hidden';
+}
+
+async function openMyReviewsModal(){
+  if(!currentUser){
+    alert('리뷰는 로그인 후 볼 수 있습니다.');
+    openUserLogin();
+    return;
+  }
+
+  setActiveBottom(3);
+  document.getElementById('myModalContent').innerHTML = `
+    <div class="modal-row" style="margin-bottom:14px;">
+      <div class="modal-name">내 리뷰</div>
+      <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+    </div>
+    <div class="empty" style="padding:2rem 1rem"><p style="font-size:13px;">내 리뷰를 불러오는 중입니다...</p></div>
+  `;
+  document.getElementById('myOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+
+  try {
+    const snapshot = await db.collection('reviews').where('userId', '==', currentUser.uid).get();
+    const reviews = [];
+    snapshot.forEach(doc => reviews.push({ id: doc.id, ...doc.data() }));
+    reviews.sort((a, b) => {
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
+    });
+
+    document.getElementById('myModalContent').innerHTML = `
+      <div class="modal-row" style="margin-bottom:14px;">
+        <div class="modal-name">내 리뷰</div>
+        <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+      </div>
+      ${renderMyReviewList(reviews)}
+    `;
+  } catch(error) {
+    console.error('내 리뷰 로드 실패:', error);
+    document.getElementById('myModalContent').innerHTML = `
+      <div class="modal-row" style="margin-bottom:14px;">
+        <div class="modal-name">내 리뷰</div>
+        <button class="card-fav" style="position:static;" onclick="closeMyModalDirect()">✕</button>
+      </div>
+      <div class="empty" style="padding:2rem 1rem"><h3>리뷰를 불러오지 못했습니다</h3><p style="font-size:13px;margin-top:4px">잠시 후 다시 시도해주세요</p></div>
+    `;
+  }
+}
+
+function renderMyReviewList(reviews){
+  const items = toArray(reviews).filter(review => !isDefaultReviewPrompt(review));
+  if(!items.length){
+    return `<div class="empty" style="padding:2.5rem 1rem"><div class="empty-icon">📖</div><h3>작성된 리뷰가 없습니다</h3><p style="font-size:13px;margin-top:4px">방문한 장소에 첫 리뷰를 남겨보세요</p></div>`;
+  }
+
+  return `<div class="fav-list">${items.map(review => {
+    const placeId = Number(review.placeId || 0);
+    const place = PLACES.find(p => p.id === placeId);
+    const image = place ? getPlaceImages(place)[0] : '';
+    const thumb = image
+      ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(review.placeName || place?.name || '리뷰 장소')} 이미지" referrerpolicy="no-referrer">`
+      : `<span>${place?.emoji || '📖'}</span>`;
+    return `
+      <button class="fav-item" type="button" onclick="${placeId ? `openFavoritePlace(${placeId})` : ''}">
+        <div class="fav-thumb">${thumb}</div>
+        <div class="fav-meta">
+          <div class="fav-name">${escapeHtml(review.placeName || place?.name || '장소 정보 없음')}</div>
+          <div class="fav-address">${escapeHtml(review.stars || starsText(review.starCount))} · ${escapeHtml(review.text || '리뷰 내용이 없습니다.')}</div>
+        </div>
+      </button>
+    `;
+  }).join('')}</div>`;
 }
 
 function openFavoritePlace(id){
@@ -1879,6 +1965,48 @@ function doSearch(){
 }
 document.getElementById('searchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doSearch();});
 
+function openSearchModal(){
+  setActiveBottom(1);
+  const input = document.getElementById('modalSearchInput');
+  input.value = searchQ || document.getElementById('searchInput').value.trim();
+  document.getElementById('searchOverlay').classList.add('open');
+  setTimeout(() => input.focus(), 50);
+}
+
+function closeSearchModal(e){
+  if(e.target===document.getElementById('searchOverlay')) closeSearchModalDirect();
+}
+
+function closeSearchModalDirect(){
+  document.getElementById('searchOverlay').classList.remove('open');
+}
+
+function doModalSearch(){
+  const value = document.getElementById('modalSearchInput').value.trim();
+  document.getElementById('searchInput').value = value;
+  searchQ = value;
+  currentView = 'all';
+  closeSearchModalDirect();
+  renderCards();
+  scrollToList();
+}
+
+document.getElementById('modalSearchInput').addEventListener('keydown',e=>{if(e.key==='Enter')doModalSearch();});
+
+function placeSearchText(p){
+  const menuText = toArray(p.menus).map(menu => `${menu.name || ''} ${menu.price || ''}`).join(' ');
+  return [
+    p.name,
+    p.address,
+    p.region,
+    typeLabel(p.type).txt,
+    p.desc,
+    p.dogPolicy,
+    toArray(p.tags).join(' '),
+    menuText
+  ].join(' ').toLowerCase();
+}
+
 function filtered(){
   return PLACES.filter(p=>{
     if(currentView === 'favorites' && !favs.has(p.id))return false;
@@ -1888,7 +2016,7 @@ function filtered(){
       if(placeType!==curType)return false;
     }
     if(curTag&&!toArray(p.tags).includes(curTag))return false;
-    if(searchQ&&!p.name.includes(searchQ)&&!p.address.includes(searchQ)&&!p.region.includes(searchQ))return false;
+    if(searchQ&&!placeSearchText(p).includes(searchQ.toLowerCase()))return false;
     return true;
   });
 }
