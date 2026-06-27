@@ -388,19 +388,19 @@ nav{
 }
 .promo-request-bar{
   position:fixed;left:0;right:0;bottom:90px;z-index:99;
-  display:flex;align-items:center;justify-content:center;gap:8px;
+  display:grid;place-items:center;
   appearance:none;
   background:var(--accent);
   border:none;
   border-top:1px solid var(--accent-dark);
-  height:38px;
-  padding:0 12px;
+  height:44px;
+  padding:0;
   font-size:12px;font-weight:900;color:var(--text);
-  line-height:1;
+  line-height:44px;
   text-align:center;cursor:pointer;
   font-family:inherit;
 }
-.promo-request-bar span{display:block;color:var(--text);transform:translateY(-1px);}
+.promo-request-bar span{display:block;color:var(--text);height:44px;line-height:44px;transform:translateY(-2px);}
 .promo-request-bar:hover{background:var(--accent-hover);}
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
@@ -418,7 +418,7 @@ nav{
 }
 .bnav-item.active{color:var(--text);}
 .bnav-icon{font-size:20px;line-height:1;}
-.main-content{padding-bottom:155px;}
+.main-content{padding-bottom:165px;}
 
 /* MODAL */
 .modal-overlay{
@@ -969,8 +969,8 @@ nav{
           <div class="form-group">
             <label class="form-label">운영시간 *</label>
             <div class="time-row">
-              <input class="form-input" id="promoOpenTime" required placeholder="오픈 예: 10:00">
-              <input class="form-input" id="promoCloseTime" required placeholder="마감 예: 21:00">
+              <select class="form-select" id="promoOpenTime" required></select>
+              <select class="form-select" id="promoCloseTime" required></select>
             </div>
           </div>
 
@@ -1017,14 +1017,6 @@ nav{
             <div class="menu-row"><input class="form-input" id="promoMenuName3" placeholder="3번 대표 메뉴명"><input class="form-input" id="promoMenuPrice3" placeholder="가격"></div>
             <div class="menu-row"><input class="form-input" id="promoMenuName4" placeholder="4번 대표 메뉴명"><input class="form-input" id="promoMenuPrice4" placeholder="가격"></div>
             <div class="menu-row"><input class="form-input" id="promoMenuName5" placeholder="5번 대표 메뉴명"><input class="form-input" id="promoMenuPrice5" placeholder="가격"></div>
-          </div>
-
-          <div class="form-group full">
-            <label class="form-label">이미지 URL</label>
-            <input class="form-input" id="promoImage1" placeholder="이미지 링크 1">
-            <input class="form-input" id="promoImage2" style="margin-top:8px;" placeholder="이미지 링크 2">
-            <input class="form-input" id="promoImage3" style="margin-top:8px;" placeholder="이미지 링크 3">
-            <div class="form-help">사진 파일 첨부가 필요한 경우 메일 발송창에서 파일을 추가해주세요.</div>
           </div>
 
           <div class="form-group full">
@@ -1126,7 +1118,7 @@ nav{
 <script>
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT5aXWVd3qdBlFKXC4rNgxXvqSGrXXDKj8_Q83aZ2M8pJm_n8yvzs2HsJ8x2iRwpSJRnnpRPSNFfnoc/pub?output=csv';
 
-const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbyLqCl6V3UqSVif3ko9QYVACCWjlnCSG0R30gaoEWSsAi0Oo3Rz9NWg14GbDrprzqin/exec';
+const SHEET_WRITE_URL = 'https://script.google.com/macros/s/AKfycbzfM5n4b7zNOs10vLeqckXco1DqxhI6TzNZ-j0vIBQ3qDnBGcxn8KCZYXD9yKLUiO4/exec';
 
 const firebaseConfig = {
   apiKey: "AIzaSyD3H3ASVvKemn-Vsax3rabiUNBCV-Ot82A",
@@ -1328,6 +1320,7 @@ function closeSignupModalDirect(){
 
 function openPromotionModal(){
   document.getElementById('promotionForm').reset();
+  initPromotionTimes();
   document.getElementById('promotionOverlay').classList.add('open');
   document.body.style.overflow='hidden';
 }
@@ -1343,6 +1336,16 @@ function closePromotionModalDirect(){
 
 function checkedValues(name){
   return [...document.querySelectorAll(`input[name="${name}"]:checked`)].map(input => input.value);
+}
+
+function initPromotionTimes(){
+  const options = TIME_OPTIONS.map(t => '<option value="' + t + '">' + t + '</option>').join('');
+  const open = document.getElementById('promoOpenTime');
+  const close = document.getElementById('promoCloseTime');
+  open.innerHTML = '<option value="">오픈시간</option>' + options;
+  close.innerHTML = '<option value="">마감시간</option>' + options;
+  open.value = '10:00';
+  close.value = '21:00';
 }
 
 function collectPromotionMenus(){
@@ -1365,9 +1368,6 @@ async function submitPromotionApplication(e){
   const menus = collectPromotionMenus();
   const tags = checkedValues('promoTags');
   const policies = checkedValues('promoDogPolicy');
-  const images = ['promoImage1','promoImage2','promoImage3']
-    .map(id => document.getElementById(id).value.trim())
-    .filter(Boolean);
 
   try {
     await fetch(SHEET_WRITE_URL, {
@@ -1390,7 +1390,6 @@ async function submitPromotionApplication(e){
         tags,
         dogPolicy: policies,
         menus,
-        imageUrls: images,
         privacyAgree: true
       })
     });
