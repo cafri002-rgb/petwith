@@ -694,7 +694,7 @@ nav{
     <div class="stat-item" style="width:1px;height:32px;background:var(--border);"></div>
     <div class="stat-item"><div class="stat-num">17개</div><div class="stat-lbl">지역 커버리지</div></div>
     <div class="stat-item" style="width:1px;height:32px;background:var(--border);"></div>
-    <div class="stat-item"><div class="stat-num">4.8★</div><div class="stat-lbl">평균 평점</div></div>
+    <div class="stat-item"><div class="stat-num" id="averageRatingBadge">0.0★</div><div class="stat-lbl">평균 평점</div></div>
   </div>
 </div>
 
@@ -1639,7 +1639,7 @@ function submitPlace(e){
   document.getElementById('imagePreview').style.display='none';
   document.getElementById('imagePreview').innerHTML='';
   closeRegisterModalDirect();
-  document.getElementById('totalCountBadge').textContent = `${PLACES.length.toLocaleString()}+`;
+  updateHeroStats();
   renderHot();
   renderCards();
   window.scrollTo({top: document.querySelector('.list-header').offsetTop - 70, behavior:'smooth'});
@@ -1681,13 +1681,14 @@ PLACES = lines.slice(1).map(line => {
       }
       obj.address = obj.address || '';
       obj.dogPolicy = obj.dogPolicy || '정책 확인 필요';
+      obj.baseRating = Number(obj.rating || 0);
+      obj.baseReviewCount = Number(obj.reviewCount || 0);
       
       return obj;
     }).filter(item => item && item.id);
 
-    document.getElementById('totalCountBadge').textContent = `${PLACES.length.toLocaleString()}+`;
-
     initTabs();
+    await refreshReviewStats();
     renderHot();
     renderCards();
 
@@ -1824,6 +1825,72 @@ function starsText(count){
   return '⭐'.repeat(n);
 }
 
+function reviewStarNumber(review){
+  if(review.starCount) return Math.max(1, Math.min(5, Number(review.starCount) || 5));
+  const stars = String(review.stars || '');
+  const count = (stars.match(/⭐/g) || []).length;
+  return count ? count : 5;
+}
+
+function updateHeroStats(){
+  const totalEl = document.getElementById('totalCountBadge');
+  const avgEl = document.getElementById('averageRatingBadge');
+  if(totalEl) totalEl.textContent = `${PLACES.length.toLocaleString()}+`;
+
+  const ratedPlaces = PLACES.filter(place => Number(place.rating) > 0);
+  const average = ratedPlaces.length
+    ? ratedPlaces.reduce((sum, place) => sum + Number(place.rating || 0), 0) / ratedPlaces.length
+    : 0;
+
+  if(avgEl) avgEl.textContent = `${average.toFixed(1)}★`;
+}
+
+function applyReviewStats(reviewDocs){
+  const grouped = new Map();
+  toArray(reviewDocs).forEach(review => {
+    const placeId = Number(review.placeId);
+    if(!placeId) return;
+    if(!grouped.has(placeId)) grouped.set(placeId, []);
+    grouped.get(placeId).push(review);
+  });
+
+  PLACES.forEach(place => {
+    if(place.baseRating === undefined) place.baseRating = Number(place.rating || 0);
+    if(place.baseReviewCount === undefined) place.baseReviewCount = Number(place.reviewCount || 0);
+
+    const savedReviews = grouped.get(Number(place.id)) || [];
+    const savedCount = savedReviews.length;
+    const savedTotal = savedReviews.reduce((sum, review) => sum + reviewStarNumber(review), 0);
+    const baseCount = Number(place.baseReviewCount || 0);
+    const baseRating = Number(place.baseRating || 0);
+    const totalCount = baseCount + savedCount;
+
+    place.reviewCount = totalCount;
+    place.rating = totalCount
+      ? Number((((baseRating * baseCount) + savedTotal) / totalCount).toFixed(1))
+      : baseRating;
+  });
+
+  updateHeroStats();
+}
+
+async function refreshReviewStats(){
+  if(!PLACES.length || !db){
+    updateHeroStats();
+    return;
+  }
+
+  try {
+    const snapshot = await db.collection('reviews').get();
+    const reviews = [];
+    snapshot.forEach(doc => reviews.push(doc.data()));
+    applyReviewStats(reviews);
+  } catch(error) {
+    console.error('리뷰 통계 로드 실패:', error);
+    updateHeroStats();
+  }
+}
+
 function renderReviewItems(reviews){
   const items = toArray(reviews);
   if(!items.length){
@@ -1873,8 +1940,10 @@ async function loadPlaceReviews(placeId){
     const allReviews = uniqueReviews([...savedReviews, ...toArray(place.reviews)]);
     const list = document.getElementById('modalReviewList');
     const count = document.getElementById('modalReviewCount');
+    const rating = document.getElementById('modalRatingBadge');
     if(list) list.innerHTML = renderReviewItems(allReviews);
-    if(count) count.textContent = `리뷰 ${Math.max(place.reviewCount || 0, allReviews.length).toLocaleString()}개`;
+    if(count) count.textContent = `리뷰 ${Number(place.reviewCount || 0).toLocaleString()}개`;
+    if(rating) rating.textContent = `⭐ ${Number(place.rating || 0).toFixed(1)}`;
   } catch(error) {
     console.error('리뷰 로드 실패:', error);
   }
@@ -1947,9 +2016,10 @@ async function submitReview(){
   try {
     isReviewSubmitting = true;
     await db.collection('reviews').add(review);
-    place.reviewCount = Number(place.reviewCount || 0) + 1;
     closeReviewModalDirect();
+    await refreshReviewStats();
     await loadPlaceReviews(place.id);
+    renderHot();
     renderCards();
     alert('리뷰가 저장되었습니다.');
   } catch(error) {
@@ -1987,7 +2057,7 @@ function renderCards(){
         <div class="card-hours">🕒 ${escapeHtml(p.hours || '운영시간 확인 필요')}</div>
         <div class="card-tags">${tags}</div>
         <div class="card-meta">
-          <div class="rating">⭐ ${p.rating} <span>(${p.reviewCount.toLocaleString()})</span></div>
+          <div class="rating">⭐ ${Number(p.rating || 0).toFixed(1)} <span>(${Number(p.reviewCount || 0).toLocaleString()})</span></div>
           <div class="price-range">${getPrimaryPrice(p)}</div>
         </div>
       </div>
@@ -2002,7 +2072,7 @@ function renderHot(){
       <div class="hot-img" style="background:${bgColor(p.type)}">${getPlaceImage(p)}</div>
       <div class="hot-body">
         <div class="hot-name">${escapeHtml(p.name)}</div>
-        <div class="hot-meta">⭐ ${p.rating} · ${escapeHtml(p.region)}</div>
+        <div class="hot-meta">⭐ ${Number(p.rating || 0).toFixed(1)} · ${escapeHtml(p.region)}</div>
       </div>
     </div>
   `).join('');
@@ -2141,7 +2211,7 @@ function openModal(id){
     <div class="modal-body">
       <div class="modal-row">
         <div class="modal-name">${p.name}</div>
-        <div class="modal-rating-badge">⭐ ${p.rating}</div>
+        <div class="modal-rating-badge" id="modalRatingBadge">⭐ ${Number(p.rating || 0).toFixed(1)}</div>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${tags}</div>
       <p style="font-size:14px;color:var(--text-muted);line-height:1.7">${p.desc}</p>
