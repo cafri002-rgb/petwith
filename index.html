@@ -389,16 +389,18 @@ nav{
 .promo-request-bar{
   position:fixed;left:0;right:0;bottom:90px;z-index:99;
   display:flex;align-items:center;justify-content:center;gap:8px;
+  appearance:none;
   background:var(--accent);
+  border:none;
   border-top:1px solid var(--accent-dark);
-  min-height:36px;
+  height:38px;
   padding:0 12px;
   font-size:12px;font-weight:900;color:var(--text);
   line-height:1;
   text-align:center;cursor:pointer;
   font-family:inherit;
 }
-.promo-request-bar span{color:var(--text);}
+.promo-request-bar span{display:block;color:var(--text);transform:translateY(-1px);}
 .promo-request-bar:hover{background:var(--accent-hover);}
 .bottom-nav{
   position:fixed;bottom:0;left:0;right:0;
@@ -1352,7 +1354,7 @@ function collectPromotionMenus(){
   }).filter(Boolean);
 }
 
-function submitPromotionApplication(e){
+async function submitPromotionApplication(e){
   e.preventDefault();
 
   if(!document.getElementById('promoPrivacyAgree').checked){
@@ -1367,33 +1369,38 @@ function submitPromotionApplication(e){
     .map(id => document.getElementById(id).value.trim())
     .filter(Boolean);
 
-  fetch(SHEET_WRITE_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {
-      'Content-Type': 'text/plain;charset=utf-8'
-    },
-    body: JSON.stringify({
-      action: 'promotion',
-      contactName: document.getElementById('promoContactName').value.trim(),
-      contactPhone: document.getElementById('promoContactPhone').value.trim(),
-      contactEmail: document.getElementById('promoContactEmail').value.trim(),
-      placeName: document.getElementById('promoPlaceName').value.trim(),
-      placeType: document.getElementById('promoPlaceType').value,
-      region: document.getElementById('promoRegion').value,
-      address: document.getElementById('promoAddress').value.trim(),
-      hours: `${document.getElementById('promoOpenTime').value.trim()} - ${document.getElementById('promoCloseTime').value.trim()}`,
-      desc: document.getElementById('promoDesc').value.trim(),
-      tags,
-      dogPolicy: policies,
-      menus,
-      imageUrls: images,
-      privacyAgree: true
-    })
-  });
+  try {
+    await fetch(SHEET_WRITE_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
+      body: JSON.stringify({
+        action: 'promotion',
+        contactName: document.getElementById('promoContactName').value.trim(),
+        contactPhone: document.getElementById('promoContactPhone').value.trim(),
+        contactEmail: document.getElementById('promoContactEmail').value.trim(),
+        placeName: document.getElementById('promoPlaceName').value.trim(),
+        placeType: document.getElementById('promoPlaceType').value,
+        region: document.getElementById('promoRegion').value,
+        address: document.getElementById('promoAddress').value.trim(),
+        hours: `${document.getElementById('promoOpenTime').value.trim()} - ${document.getElementById('promoCloseTime').value.trim()}`,
+        desc: document.getElementById('promoDesc').value.trim(),
+        tags,
+        dogPolicy: policies,
+        menus,
+        imageUrls: images,
+        privacyAgree: true
+      })
+    });
 
-  closePromotionModalDirect();
-  alert('홍보 신청이 접수되었습니다. 확인 후 연락드릴게요.');
+    closePromotionModalDirect();
+    alert('홍보 신청이 접수되었습니다. 확인 후 연락드릴게요.');
+  } catch(error) {
+    console.error('홍보 신청 전송 실패:', error);
+    alert('홍보 신청 전송에 실패했습니다. 잠시 후 다시 시도해주세요.');
+  }
 }
 
 function isValidSignupPassword(password){
