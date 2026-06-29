@@ -828,11 +828,22 @@ nav{
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">운영시간 *</label>
+            <label class="form-label">평일 운영시간 *</label>
             <div class="time-row">
-              <select class="form-select" id="openTime" required></select>
-              <select class="form-select" id="closeTime" required></select>
+              <select class="form-select" id="weekdayOpenTime" required></select>
+              <select class="form-select" id="weekdayCloseTime" required></select>
             </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">주말 운영시간 *</label>
+            <div class="time-row">
+              <select class="form-select" id="weekendOpenTime" required></select>
+              <select class="form-select" id="weekendCloseTime" required></select>
+            </div>
+          </div>
+          <div class="form-group full">
+            <label class="form-label">휴무일</label>
+            <div class="check-grid" id="closedDayChecks"></div>
           </div>
 
           <div class="form-group full">
@@ -1160,6 +1171,7 @@ const ADMIN_TOKEN_KEY = 'petwithAdminToken';
 
 const TAG_OPTIONS = ['야외테라스','전용 좌석','물 제공', '간식제공', '마당있음','전용주차'];
 const DOG_POLICY_OPTIONS = ['소형견 가능','중형견 가능','대형견 가능','실내 동반 가능','야외석만 가능','이동가방 필요','목줄 필수','펫매너 필수','예약 필수'];
+const CLOSED_DAY_OPTIONS = ['월요일','화요일','수요일','목요일','금요일','토요일','일요일'];
 const TIME_OPTIONS = Array.from({length:48}, (_,i) => {
   const h = String(Math.floor(i / 2)).padStart(2, '0');
   const m = i % 2 === 0 ? '00' : '30';
@@ -1794,10 +1806,14 @@ function moveModalSlide(btn, direction){
 // ⚠️ 동적 생성 시 충돌을 차단하기 위해 초기 1회만 고정 실행하도록 뼈대 생성 유지
 function initRegisterForm(){
   const timeOptions = TIME_OPTIONS.map(t => '<option value="' + t + '">' + t + '</option>').join('');
-  document.getElementById('openTime').innerHTML = '<option value="">오픈시간</option>' + timeOptions;
-  document.getElementById('closeTime').innerHTML = '<option value="">마감시간</option>' + timeOptions;
-  document.getElementById('openTime').value = '10:00';
-  document.getElementById('closeTime').value = '21:00';
+  ['weekdayOpenTime','weekendOpenTime'].forEach(id => {
+    document.getElementById(id).innerHTML = '<option value="">오픈시간</option>' + timeOptions;
+    document.getElementById(id).value = '10:00';
+  });
+  ['weekdayCloseTime','weekendCloseTime'].forEach(id => {
+    document.getElementById(id).innerHTML = '<option value="">마감시간</option>' + timeOptions;
+    document.getElementById(id).value = '21:00';
+  });
 
   document.getElementById('tagChecks').innerHTML = TAG_OPTIONS.map(t => `
     <label class="check-pill"><input type="checkbox" name="tags" value="${t}">${t}</label>
@@ -1805,10 +1821,13 @@ function initRegisterForm(){
   document.getElementById('dogPolicyChecks').innerHTML = DOG_POLICY_OPTIONS.map(t => `
     <label class="check-pill"><input type="checkbox" name="dogPolicy" value="${t}">${t}</label>
   `).join('');
+  document.getElementById('closedDayChecks').innerHTML = CLOSED_DAY_OPTIONS.map(t => `
+    <label class="check-pill"><input type="checkbox" name="closedDays" value="${t}">${t}</label>
+  `).join('');
   
   document.getElementById('menuInputs').innerHTML = Array.from({length:5}, (_,i) => `
     <div class="menu-row">
-      <input class="form-input" id="menuName${i+1}" ${i===0?'required':''} placeholder="${i+1}번 대표 메뉴명">
+      <input class="form-input" id="menuName${i+1}" ${i===0?'required':''} lang="ko" inputmode="text" autocomplete="off" placeholder="${i+1}번 대표 메뉴명">
       <input class="form-input" id="menuPrice${i+1}" ${i===0?'required':''} inputmode="numeric" placeholder="가격">
     </div>
   `).join('');
@@ -1829,6 +1848,49 @@ function setCheckedValues(name, values){
   });
 }
 
+function setTimeValue(id, value, fallback){
+  const el = document.getElementById(id);
+  if(el) el.value = value || fallback;
+}
+
+function parsePlaceHours(hoursText){
+  const text = String(hoursText || '');
+  const result = {
+    weekdayOpen: '10:00',
+    weekdayClose: '21:00',
+    weekendOpen: '10:00',
+    weekendClose: '21:00',
+    closedDays: []
+  };
+
+  const weekday = text.match(/평일\s*([0-9]{2}:[0-9]{2})\s*[-~]\s*([0-9]{2}:[0-9]{2})/);
+  const weekend = text.match(/주말\s*([0-9]{2}:[0-9]{2})\s*[-~]\s*([0-9]{2}:[0-9]{2})/);
+  const simple = text.match(/([0-9]{2}:[0-9]{2})\s*[-~]\s*([0-9]{2}:[0-9]{2})/);
+  const closed = text.match(/휴무\s*([^|]+)/);
+
+  if(weekday){
+    result.weekdayOpen = weekday[1];
+    result.weekdayClose = weekday[2];
+  } else if(simple){
+    result.weekdayOpen = simple[1];
+    result.weekdayClose = simple[2];
+  }
+
+  if(weekend){
+    result.weekendOpen = weekend[1];
+    result.weekendClose = weekend[2];
+  } else {
+    result.weekendOpen = result.weekdayOpen;
+    result.weekendClose = result.weekdayClose;
+  }
+
+  if(closed && !closed[1].includes('없음')){
+    result.closedDays = closed[1].split(',').map(day => day.trim()).filter(Boolean);
+  }
+
+  return result;
+}
+
 function fillPlaceForm(place){
   document.getElementById('placeName').value = place.name || '';
   document.getElementById('placeType').value = place.type === 'both' ? 'view' : (place.type || 'restaurant');
@@ -1838,12 +1900,15 @@ function fillPlaceForm(place){
   document.getElementById('postcode').value = '-';
   document.getElementById('placeDesc').value = place.desc || '';
 
-  const hours = String(place.hours || '').split(/\s*[-~]\s*/);
-  if(hours[0]) document.getElementById('openTime').value = hours[0];
-  if(hours[1]) document.getElementById('closeTime').value = hours[1];
+  const hours = parsePlaceHours(place.hours);
+  setTimeValue('weekdayOpenTime', hours.weekdayOpen, '10:00');
+  setTimeValue('weekdayCloseTime', hours.weekdayClose, '21:00');
+  setTimeValue('weekendOpenTime', hours.weekendOpen, '10:00');
+  setTimeValue('weekendCloseTime', hours.weekendClose, '21:00');
 
   setCheckedValues('tags', place.tags);
   setCheckedValues('dogPolicy', String(place.dogPolicy || '').split(' · '));
+  setCheckedValues('closedDays', hours.closedDays);
 
   toArray(place.menus).slice(0, 5).forEach((menu, index) => {
     const nameEl = document.getElementById(`menuName${index + 1}`);
@@ -2027,16 +2092,19 @@ function submitPlace(e){
     return;
   }
 
-  const openTime = document.getElementById('openTime').value;
-  const closeTime = document.getElementById('closeTime').value;
+  const weekdayOpenTime = document.getElementById('weekdayOpenTime').value;
+  const weekdayCloseTime = document.getElementById('weekdayCloseTime').value;
+  const weekendOpenTime = document.getElementById('weekendOpenTime').value;
+  const weekendCloseTime = document.getElementById('weekendCloseTime').value;
 
-  if(!openTime || !closeTime){
-    alert('오픈시간과 마감시간을 선택해주세요.');
+  if(!weekdayOpenTime || !weekdayCloseTime || !weekendOpenTime || !weekendCloseTime){
+    alert('평일과 주말의 오픈시간과 마감시간을 모두 선택해주세요.');
     return;
   }
 
   const selectedTags = [...document.querySelectorAll('input[name="tags"]:checked')].map(x=>x.value);
   const selectedPolicies = [...document.querySelectorAll('input[name="dogPolicy"]:checked')].map(x=>x.value);
+  const selectedClosedDays = [...document.querySelectorAll('input[name="closedDays"]:checked')].map(x=>x.value);
   
   const menus = Array.from({length:5}, (_,i)=>{
     const nameEl = document.getElementById(`menuName${i+1}`);
@@ -2058,7 +2126,7 @@ function submitPlace(e){
     type: document.getElementById('placeType').value,
     region: document.getElementById('placeRegion').value,
     address: `${baseAddress} ${detailAddress}`.trim(),
-    hours: openTime + ' - ' + closeTime,
+    hours: `평일 ${weekdayOpenTime} - ${weekdayCloseTime} · 주말 ${weekendOpenTime} - ${weekendCloseTime} · 휴무 ${selectedClosedDays.length ? selectedClosedDays.join(', ') : '없음'}`,
     desc: document.getElementById('placeDesc').value.trim() || '새로 등록된 반려견 동반 장소입니다.',
     tags: selectedTags,
     dogPolicy: selectedPolicies.join(' · ') || '정책 확인 필요',
